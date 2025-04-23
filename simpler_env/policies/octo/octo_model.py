@@ -127,7 +127,7 @@ class OctoInference:
         # self.gripper_is_closed = False
         self.previous_gripper_action = None
 
-    def step(self, image: np.ndarray, task_description: Optional[str] = None, *args, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
+    def step(self, image: np.ndarray, task_description: Optional[str] = None, *args, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict]:
         """
         Input:
             image: np.ndarray of shape (H, W, 3), uint8
@@ -139,6 +139,7 @@ class OctoInference:
                 - 'rot_axangle': np.ndarray of shape (3,), axis-angle representation of end-effector rotation
                 - 'gripper': np.ndarray of shape (1,), gripper action
                 - 'terminate_episode': np.ndarray of shape (1,), 1 if episode should be terminated, 0 otherwise
+            action_info: dict; additional information about the sampled actions from the model
         """
         if task_description is not None:
             if task_description != self.task_description:
@@ -156,7 +157,7 @@ class OctoInference:
         # print("octo local rng", self.rng, key)
 
         input_observation = {"image_primary": images, "pad_mask": pad_mask}
-        norm_raw_actions = self.model.sample_actions(
+        norm_raw_actions, action_info = self.model.sample_actions(
             input_observation,
             self.task,
             rng=key,
@@ -239,7 +240,7 @@ class OctoInference:
 
         action["terminate_episode"] = np.array([0.0])
 
-        return raw_action, action
+        return raw_action, action, action_info
 
     def visualize_epoch(self, predicted_raw_actions: Sequence[np.ndarray], images: Sequence[np.ndarray], save_path: str) -> None:
         images = [self._resize_image(image) for image in images]
