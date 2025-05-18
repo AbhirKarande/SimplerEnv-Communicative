@@ -162,6 +162,7 @@ class OctoInference:
             self.task,
             rng=key,
         )
+        print("action info", action_info)
         raw_actions = norm_raw_actions * self.action_std[None] + self.action_mean[None]
         raw_actions = raw_actions[0]  # remove batch, becoming (action_pred_horizon, action_dim)
 
