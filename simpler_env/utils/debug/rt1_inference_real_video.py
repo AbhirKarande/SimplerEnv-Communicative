@@ -85,9 +85,10 @@ def main(
     # Step the environment
     while loop_criterion(timestep):
         if input_video is not None:
-            raw_action, action = rt1_model.step(input_video[timestep])
+            step_output = rt1_model.step(input_video[timestep])
         else:
-            raw_action, action = rt1_model.step(image)
+            step_output = rt1_model.step(image)
+        raw_action, action = step_output[0], step_output[1]
         predicted_actions.append(raw_action)
         print(timestep, raw_action)
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
