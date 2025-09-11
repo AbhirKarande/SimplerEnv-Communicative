@@ -2,6 +2,11 @@
 
 gpu_id=0
 
+# Set a logging directory (prefer node-local scratch if available)
+LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
+LOG_DIR="$LOG_ROOT/simpler_env_results"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
 declare -a policy_models=(
   "octo-base"
   # "octo-server"
@@ -31,7 +36,8 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --robot-init-x 0.35 0.35 1 --robot-init-y 0.21 0.21 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.09 -0.09 1 \
   --additional-env-build-kwargs urdf_version=${urdf_version} \
-  --additional-env-save-tags baked_except_bpb_orange; # google_move_near_real_eval_1.png
+  --additional-env-save-tags baked_except_bpb_orange \
+  --logging-dir "$LOG_DIR"; # google_move_near_real_eval_1.png
 
 # do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
 #   --robot google_robot_static \
