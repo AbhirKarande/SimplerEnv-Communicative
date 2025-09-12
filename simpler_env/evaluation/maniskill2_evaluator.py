@@ -35,6 +35,8 @@ def run_maniskill2_eval_single_episode(
     enable_raytracing=False,
     additional_env_save_tags=None,
     logging_dir="./results",
+    episode_idx=None,
+    total_episodes=None,
 ):
 
     if additional_env_build_kwargs is None:
@@ -131,7 +133,13 @@ def run_maniskill2_eval_single_episode(
             print(task_description)
         is_final_subtask = env.is_final_subtask()
 
-        print(timestep, info)
+        if episode_idx is not None:
+            if total_episodes is not None:
+                print(f"Episode {episode_idx}/{total_episodes} | timestep {timestep}", info)
+            else:
+                print(f"Episode {episode_idx} | timestep {timestep}", info)
+        else:
+            print(timestep, info)
 
         image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
         images.append(image)
@@ -177,6 +185,20 @@ def maniskill2_evaluator(model, args):
     control_mode = get_robot_control_mode(args.robot, args.policy_model)
     success_arr = []
 
+    # precompute total number of episodes and track episode index (1-based)
+    n_rx = len(args.robot_init_xs)
+    n_ry = len(args.robot_init_ys)
+    n_rq = len(args.robot_init_quats)
+    if args.obj_variation_mode == "xy":
+        n_ox = len(args.obj_init_xs)
+        n_oy = len(args.obj_init_ys)
+        total_episodes = n_rx * n_ry * n_rq * n_ox * n_oy
+    elif args.obj_variation_mode == "episode":
+        total_episodes = n_rx * n_ry * n_rq * (args.obj_episode_range[1] - args.obj_episode_range[0])
+    else:
+        raise NotImplementedError()
+    episode_idx = 0
+
     # run inference
     for robot_init_x in args.robot_init_xs:
         for robot_init_y in args.robot_init_ys:
@@ -204,16 +226,27 @@ def maniskill2_evaluator(model, args):
                 if args.obj_variation_mode == "xy":
                     for obj_init_x in args.obj_init_xs:
                         for obj_init_y in args.obj_init_ys:
+                            episode_idx += 1
                             success_arr.append(
                                 run_maniskill2_eval_single_episode(
                                     obj_init_x=obj_init_x,
                                     obj_init_y=obj_init_y,
+                                    episode_idx=episode_idx,
+                                    total_episodes=total_episodes,
                                     **kwargs,
                                 )
                             )
                 elif args.obj_variation_mode == "episode":
                     for obj_episode_id in range(args.obj_episode_range[0], args.obj_episode_range[1]):
-                        success_arr.append(run_maniskill2_eval_single_episode(obj_episode_id=obj_episode_id, **kwargs))
+                        episode_idx += 1
+                        success_arr.append(
+                            run_maniskill2_eval_single_episode(
+                                obj_episode_id=obj_episode_id,
+                                episode_idx=episode_idx,
+                                total_episodes=total_episodes,
+                                **kwargs,
+                            )
+                        )
                 else:
                     raise NotImplementedError()
 
