@@ -2,9 +2,9 @@
 
 
 
-EXP_SETUP=${EXP_SETUP:-1}                # 1 or 2
-MC_PASSES=${MC_PASSES:-20}               # e.g., 10, 20, 40
-SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
+EXP_SETUP=${EXP_SETUP:2}                # 1 or 2
+MC_PASSES=${MC_PASSES:20}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:30}
 declare -a policy_models=(
 "octo-base"
 # "octo-server"
