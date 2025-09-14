@@ -272,3 +272,105 @@ class OctoInference:
         axs["image"].set_xlabel("Time in one episode (subsampled)")
         plt.legend()
         plt.savefig(save_path)
+
+
+class BatchedOctoInference(OctoInference):
+    def batch_step(
+        self,
+        image: Optional[np.ndarray],
+        num_inferences: int,
+        task_description: Optional[str] = None,
+    ) -> list[tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict]]:
+        if task_description is not None and task_description != self.task_description:
+            self.reset(task_description)
+
+        if image is not None:
+            assert image.dtype == np.uint8
+            image_resized = self._resize_image(image)
+            self._add_image_to_history(image_resized)
+
+        images, pad_mask = self._obtain_image_history_and_mask()
+
+        input_observation = {
+            "image_primary": images[None],
+            "pad_mask": pad_mask[None],
+        }
+
+        # Generate a single key for batched sampling
+        self.rng, key = jax.random.split(self.rng)
+
+        # Perform batched inference in a single call using sample_shape
+        norm_raw_actions_batch, action_info_batch = self.model.sample_actions(
+            input_observation,
+            self.task,
+            rng=key,
+            sample_shape=(num_inferences,),
+        )
+
+        # Output shape: (num_inferences, batch_size=1, pred_horizon, action_dim)
+        # Squeeze the batch dimension.
+        norm_raw_actions_batch = norm_raw_actions_batch.squeeze(axis=1)
+
+        # Some tensors in action_info_batch might have the history dimension instead of a batch dimension.
+        # Squeeze conditionally to handle this inconsistency.
+        def safe_squeeze(x):
+            if hasattr(x, "shape") and len(x.shape) > 1 and x.shape[1] == 1:
+                return x.squeeze(axis=1)
+            return x
+
+        action_info_batch = jax.tree_map(safe_squeeze, action_info_batch)
+
+        raw_actions_batch = (
+            norm_raw_actions_batch * self.action_std[None] + self.action_mean[None]
+        )
+
+        results = []
+        for i in range(num_inferences):
+            raw_actions = raw_actions_batch[i]  # (pred_action_horizon, 7)
+
+            action_info = jax.tree_map(lambda x: x[i], action_info_batch)
+
+            assert raw_actions.shape == (self.pred_action_horizon, 7)
+            if self.action_ensemble:
+                raw_actions = self.action_ensembler.ensemble_action(raw_actions)
+                raw_actions = raw_actions[None]
+
+            raw_action = {
+                "world_vector": np.array(raw_actions[0, :3]),
+                "rotation_delta": np.array(raw_actions[0, 3:6]),
+                "open_gripper": np.array(raw_actions[0, 6:7]),
+            }
+
+            action = {}
+            action["world_vector"] = raw_action["world_vector"] * self.action_scale
+            action_rotation_delta = np.asarray(raw_action["rotation_delta"], dtype=np.float64)
+            roll, pitch, yaw = action_rotation_delta
+            action_rotation_ax, action_rotation_angle = euler2axangle(roll, pitch, yaw)
+            action_rotation_axangle = action_rotation_ax * action_rotation_angle
+            action["rot_axangle"] = action_rotation_axangle * self.action_scale
+
+            if self.policy_setup == "google_robot":
+                current_gripper_action = raw_action["open_gripper"]
+                if self.previous_gripper_action is None:
+                    relative_gripper_action = np.array([0])
+                else:
+                    relative_gripper_action = self.previous_gripper_action - current_gripper_action
+                self.previous_gripper_action = current_gripper_action
+                if np.abs(relative_gripper_action) > 0.5 and not self.sticky_action_is_on:
+                    self.sticky_action_is_on = True
+                    self.sticky_gripper_action = relative_gripper_action
+                if self.sticky_action_is_on:
+                    self.gripper_action_repeat += 1
+                    relative_gripper_action = self.sticky_gripper_action
+                if self.gripper_action_repeat == self.sticky_gripper_num_repeat:
+                    self.sticky_action_is_on = False
+                    self.gripper_action_repeat = 0
+                    self.sticky_gripper_action = 0.0
+                action["gripper"] = relative_gripper_action
+            elif self.policy_setup == "widowx_bridge":
+                action["gripper"] = 2.0 * (raw_action["open_gripper"] > 0.5) - 1.0
+
+            action["terminate_episode"] = np.array([0.0])
+            results.append((raw_action, action, action_info))
+
+        return results

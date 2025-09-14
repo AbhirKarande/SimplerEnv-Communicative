@@ -114,6 +114,34 @@ def get_args():
     parser.add_argument("--tf-memory-limit", type=int, default=3072, help="Tensorflow memory limit")
     parser.add_argument("--octo-init-rng", type=int, default=0, help="Octo init rng seed")
 
+    # Batched Octo inference options
+    parser.add_argument("--use-octo-batched", action="store_true", help="Use BatchedOctoInference and batched stepping")
+    parser.add_argument(
+        "--batched-num-samples-per-inference",
+        type=int,
+        default=30,
+        help="Number of samples per model forward (aleatoric)",
+    )
+    parser.add_argument(
+        "--batched-num-mc-inferences",
+        type=int,
+        default=10,
+        help="Number of MC forward passes per timestep (epistemic)",
+    )
+    parser.add_argument(
+        "--batched-experimental-setup",
+        type=int,
+        default=1,
+        choices=[1, 2],
+        help="1: mean over MC passes; 2: mean per pass then uniform random pick",
+    )
+    parser.add_argument(
+        "--batched-random-seed",
+        type=int,
+        default=0,
+        help="Random seed for experimental setup 2 action selection",
+    )
+
     args = parser.parse_args()
 
     # env args: robot pose

@@ -5,7 +5,7 @@ Evaluate a model on ManiSkill2 environment.
 import os
 
 import numpy as np
-from transforms3d.euler import quat2euler
+from transforms3d.euler import quat2euler, euler2axangle
 
 from simpler_env.utils.env.env_builder import build_maniskill2_env, get_robot_control_mode
 from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
@@ -105,26 +105,142 @@ def run_maniskill2_eval_single_episode(
     # Initialize model
     model.reset(task_description)
 
+    # Initialize RNG for experimental setup 2 (uniform selection across MC passes)
+    batched_choice_rng = None
+    batched_experimental_setup = None
+    if getattr(model, "batch_step", None) is not None:
+        batched_experimental_setup = getattr(model, "_batched_experimental_setup", 1)
+        batched_random_seed = getattr(model, "_batched_random_seed", 0)
+        if batched_experimental_setup == 2:
+            batched_choice_rng = np.random.RandomState(batched_random_seed)
+
     timestep = 0
     success = "failure"
 
     # Step the environment
     while not (predicted_terminated or truncated):
-        # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
-        step_output = model.step(image, task_description)
-        raw_action, action = step_output[0], step_output[1]
-        predicted_actions.append(raw_action)
-        predicted_terminated = bool(action["terminate_episode"][0] > 0)
-        if predicted_terminated:
-            if not is_final_subtask:
-                # advance the environment to the next subtask
-                predicted_terminated = False
-                env.advance_to_next_subtask()
+        use_batched = getattr(model, "batch_step", None) is not None and hasattr(env, "step") and hasattr(model, "action_scale")
+        if use_batched:
+            # Batched sampling for epistemic/aleatoric estimates
+            # Access settings attached to the model by main_inference
+            num_mc_inferences = getattr(model, "_batched_num_mc_inferences", 10)
+            num_samples_per_inference = getattr(model, "_batched_num_samples_per_inference", 30)
+            experimental_setup = batched_experimental_setup if batched_experimental_setup is not None else getattr(model, "_batched_experimental_setup", 1)
 
-        # step the environment
-        obs, reward, done, truncated, info = env.step(
-            np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
-        )
+            all_results = []
+            for i in range(num_mc_inferences):
+                current_image = image if i == 0 else None
+                results = model.batch_step(current_image, num_samples_per_inference, task_description)
+                all_results.append(results)
+
+            # For each MC pass, compute mean action and per-dimension entropy across 30 samples
+            per_pass_mean_actions = []
+            per_pass_mean_entropies = []
+            epsilon = 1e-8
+            for one_inference_results in all_results:
+                per_pass_wv = np.stack([res[0]["world_vector"] for res in one_inference_results])
+                per_pass_rot = np.stack([res[0]["rotation_delta"] for res in one_inference_results])
+                per_pass_grip = np.stack([res[0]["open_gripper"] for res in one_inference_results])
+
+                mean_wv = np.mean(per_pass_wv, axis=0)
+                mean_rot = np.mean(per_pass_rot, axis=0)
+                mean_grip = np.mean(per_pass_grip, axis=0)
+
+                var_wv = np.var(per_pass_wv, axis=0)
+                var_rot = np.var(per_pass_rot, axis=0)
+                var_grip = np.var(per_pass_grip, axis=0)
+
+                entropy = {
+                    "world_vector": 0.5 * np.log(2 * np.pi * np.e * (var_wv + epsilon)),
+                    "rotation_delta": 0.5 * np.log(2 * np.pi * np.e * (var_rot + epsilon)),
+                    "open_gripper": 0.5 * np.log(2 * np.pi * np.e * (var_grip + epsilon)),
+                }
+
+                per_pass_mean_actions.append({
+                    "world_vector": mean_wv,
+                    "rotation_delta": mean_rot,
+                    "open_gripper": mean_grip,
+                })
+                per_pass_mean_entropies.append(entropy)
+
+            if experimental_setup == 1:
+                # Setup 1: mean over all MC passes and samples
+                mean_world_vector = np.mean([a["world_vector"] for a in per_pass_mean_actions], axis=0)
+                mean_rotation_delta = np.mean([a["rotation_delta"] for a in per_pass_mean_actions], axis=0)
+                mean_open_gripper = np.mean([a["open_gripper"] for a in per_pass_mean_actions], axis=0)
+
+                raw_action = {
+                    "world_vector": mean_world_vector,
+                    "rotation_delta": mean_rotation_delta,
+                    "open_gripper": mean_open_gripper,
+                }
+                selected_entropy = {
+                    "world_vector": np.mean([e["world_vector"] for e in per_pass_mean_entropies], axis=0),
+                    "rotation_delta": np.mean([e["rotation_delta"] for e in per_pass_mean_entropies], axis=0),
+                    "open_gripper": np.mean([e["open_gripper"] for e in per_pass_mean_entropies], axis=0),
+                }
+            else:
+                # Setup 2: mean per pass, then uniformly pick one pass's mean action
+                rng = batched_choice_rng if batched_choice_rng is not None else np.random
+                chosen_idx = rng.randint(0, len(per_pass_mean_actions))
+                raw_action = per_pass_mean_actions[chosen_idx]
+                selected_entropy = per_pass_mean_entropies[chosen_idx]
+
+            # Convert to environment action (mirrors OctoInference.step)
+            action = {}
+            action["world_vector"] = raw_action["world_vector"] * model.action_scale
+            action_rotation_delta = np.asarray(raw_action["rotation_delta"], dtype=np.float64)
+            r, p, y = action_rotation_delta
+            action_rotation_ax, action_rotation_angle = euler2axangle(r, p, y)
+            action_rotation_axangle = action_rotation_ax * action_rotation_angle
+            action["rot_axangle"] = action_rotation_axangle * model.action_scale
+
+            if getattr(model, "policy_setup", "google_robot") == "google_robot":
+                current_gripper_action = raw_action["open_gripper"]
+                if model.previous_gripper_action is None:
+                    relative_gripper_action = np.array([0])
+                else:
+                    relative_gripper_action = model.previous_gripper_action - current_gripper_action
+                model.previous_gripper_action = current_gripper_action
+                if np.abs(relative_gripper_action) > 0.5 and not model.sticky_action_is_on:
+                    model.sticky_action_is_on = True
+                    model.sticky_gripper_action = relative_gripper_action
+                if model.sticky_action_is_on:
+                    model.gripper_action_repeat += 1
+                    relative_gripper_action = model.sticky_gripper_action
+                if model.gripper_action_repeat == model.sticky_gripper_num_repeat:
+                    model.sticky_action_is_on = False
+                    model.gripper_action_repeat = 0
+                    model.sticky_gripper_action = 0.0
+                action["gripper"] = relative_gripper_action
+            else:
+                action["gripper"] = 2.0 * (raw_action["open_gripper"] > 0.5) - 1.0
+
+            action["terminate_episode"] = np.array([0.0])
+            # Store entropy alongside raw_action for potential downstream logging (ignored by visualize)
+            raw_action_with_entropy = dict(raw_action)
+            raw_action_with_entropy["mean_entropy"] = selected_entropy
+            predicted_actions.append(raw_action_with_entropy)
+
+            obs, reward, done, truncated, info = env.step(
+                np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
+            )
+        else:
+            # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
+            step_output = model.step(image, task_description)
+            raw_action, action = step_output[0], step_output[1]
+            predicted_actions.append(raw_action)
+            predicted_terminated = bool(action["terminate_episode"][0] > 0)
+            if predicted_terminated:
+                if not is_final_subtask:
+                    # advance the environment to the next subtask
+                    predicted_terminated = False
+                    env.advance_to_next_subtask()
+
+            # step the environment
+            obs, reward, done, truncated, info = env.step(
+                np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
+            )
         
         success = "success" if done else "failure"
         new_task_description = env.get_language_instruction()

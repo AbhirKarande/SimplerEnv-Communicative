@@ -9,7 +9,7 @@ from simpler_env.policies.octo.octo_server_model import OctoServerInference
 from simpler_env.policies.rt1.rt1_model import RT1Inference
 
 try:
-    from simpler_env.policies.octo.octo_model import OctoInference
+    from simpler_env.policies.octo.octo_model import OctoInference, BatchedOctoInference
 except ImportError as e:
     print("Octo is not correctly imported.")
     print(e)
@@ -47,12 +47,25 @@ if __name__ == "__main__":
                 action_scale=args.action_scale,
             )
         else:
-            model = OctoInference(
-                model_type=args.ckpt_path,
-                policy_setup=args.policy_setup,
-                init_rng=args.octo_init_rng,
-                action_scale=args.action_scale,
-            )
+            if getattr(args, "use_octo_batched", False):
+                model = BatchedOctoInference(
+                    model_type=args.ckpt_path,
+                    policy_setup=args.policy_setup,
+                    init_rng=args.octo_init_rng,
+                    action_scale=args.action_scale,
+                )
+                # Store batched settings on the model for downstream use
+                setattr(model, "_batched_num_mc_inferences", getattr(args, "batched_num_mc_inferences", 10))
+                setattr(model, "_batched_num_samples_per_inference", getattr(args, "batched_num_samples_per_inference", 30))
+                setattr(model, "_batched_experimental_setup", getattr(args, "batched_experimental_setup", 1))
+                setattr(model, "_batched_random_seed", getattr(args, "batched_random_seed", 0))
+            else:
+                model = OctoInference(
+                    model_type=args.ckpt_path,
+                    policy_setup=args.policy_setup,
+                    init_rng=args.octo_init_rng,
+                    action_scale=args.action_scale,
+                )
     else:
         raise NotImplementedError()
 
