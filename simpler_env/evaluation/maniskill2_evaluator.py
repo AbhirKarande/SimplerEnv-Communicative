@@ -12,6 +12,28 @@ from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_ob
 from simpler_env.utils.visualization import write_video
 
 
+def _ensure_serializable(obj):
+    try:
+        import numpy as _np
+    except Exception:
+        _np = None
+    if _np is not None:
+        if isinstance(obj, _np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (_np.int32, _np.int64)):
+            return int(obj)
+        if isinstance(obj, (_np.float32, _np.float64)):
+            return float(obj)
+    if isinstance(obj, dict):
+        return {k: _ensure_serializable(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_ensure_serializable(v) for v in obj]
+    try:
+        return obj
+    except Exception:
+        return str(obj)
+
+
 def run_maniskill2_eval_single_episode(
     model,
     ckpt_path,
@@ -37,6 +59,7 @@ def run_maniskill2_eval_single_episode(
     logging_dir="./results",
     episode_idx=None,
     total_episodes=None,
+    mc_logging=False,
 ):
 
     if additional_env_build_kwargs is None:
@@ -101,6 +124,7 @@ def run_maniskill2_eval_single_episode(
     images = [image]
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
+    trajectory = [] if mc_logging else None
 
     # Initialize model
     model.reset(task_description)
@@ -136,11 +160,18 @@ def run_maniskill2_eval_single_episode(
             # For each MC pass, compute mean action and per-dimension entropy across 30 samples
             per_pass_mean_actions = []
             per_pass_mean_entropies = []
+            per_pass_wv_all = []
+            per_pass_rot_all = []
+            per_pass_grip_all = []
             epsilon = 1e-8
             for one_inference_results in all_results:
                 per_pass_wv = np.stack([res[0]["world_vector"] for res in one_inference_results])
                 per_pass_rot = np.stack([res[0]["rotation_delta"] for res in one_inference_results])
                 per_pass_grip = np.stack([res[0]["open_gripper"] for res in one_inference_results])
+
+                per_pass_wv_all.append(per_pass_wv)
+                per_pass_rot_all.append(per_pass_rot)
+                per_pass_grip_all.append(per_pass_grip)
 
                 mean_wv = np.mean(per_pass_wv, axis=0)
                 mean_rot = np.mean(per_pass_rot, axis=0)
@@ -162,6 +193,41 @@ def run_maniskill2_eval_single_episode(
                     "open_gripper": mean_grip,
                 })
                 per_pass_mean_entropies.append(entropy)
+
+            # Compute total, aleatoric, epistemic entropies for logging
+            all_raw_actions_world_vector = np.concatenate(per_pass_wv_all, axis=0)
+            all_raw_rot_delta = np.concatenate(per_pass_rot_all, axis=0)
+            all_raw_grip_open = np.concatenate(per_pass_grip_all, axis=0)
+
+            total_var_wv = np.var(all_raw_actions_world_vector, axis=0)
+            total_var_rot = np.var(all_raw_rot_delta, axis=0)
+            total_var_grip = np.var(all_raw_grip_open, axis=0)
+            total_entropy = {
+                "world_vector": 0.5 * np.log(2 * np.pi * np.e * (total_var_wv + epsilon)),
+                "rotation_delta": 0.5 * np.log(2 * np.pi * np.e * (total_var_rot + epsilon)),
+                "open_gripper": 0.5 * np.log(2 * np.pi * np.e * (total_var_grip + epsilon)),
+            }
+
+            per_inference_means_wv = np.stack([a["world_vector"] for a in per_pass_mean_actions])
+            per_inference_means_rot = np.stack([a["rotation_delta"] for a in per_pass_mean_actions])
+            per_inference_means_grip = np.stack([a["open_gripper"] for a in per_pass_mean_actions])
+            epistemic_vars_wv = np.var(per_inference_means_wv, axis=0)
+            epistemic_vars_rot = np.var(per_inference_means_rot, axis=0)
+            epistemic_vars_grip = np.var(per_inference_means_grip, axis=0)
+            epistemic_entropy = {
+                "world_vector": 0.5 * np.log(2 * np.pi * np.e * (epistemic_vars_wv + epsilon)),
+                "rotation_delta": 0.5 * np.log(2 * np.pi * np.e * (epistemic_vars_rot + epsilon)),
+                "open_gripper": 0.5 * np.log(2 * np.pi * np.e * (epistemic_vars_grip + epsilon)),
+            }
+
+            per_inference_vars_wv = np.mean([np.var(arr, axis=0) for arr in per_pass_wv_all], axis=0)
+            per_inference_vars_rot = np.mean([np.var(arr, axis=0) for arr in per_pass_rot_all], axis=0)
+            per_inference_vars_grip = np.mean([np.var(arr, axis=0) for arr in per_pass_grip_all], axis=0)
+            aleatoric_entropy = {
+                "world_vector": 0.5 * np.log(2 * np.pi * np.e * (per_inference_vars_wv + epsilon)),
+                "rotation_delta": 0.5 * np.log(2 * np.pi * np.e * (per_inference_vars_rot + epsilon)),
+                "open_gripper": 0.5 * np.log(2 * np.pi * np.e * (per_inference_vars_grip + epsilon)),
+            }
 
             if experimental_setup == 1:
                 # Setup 1: mean over all MC passes and samples
@@ -217,10 +283,29 @@ def run_maniskill2_eval_single_episode(
                 action["gripper"] = 2.0 * (raw_action["open_gripper"] > 0.5) - 1.0
 
             action["terminate_episode"] = np.array([0.0])
-            # Store entropy alongside raw_action for potential downstream logging (ignored by visualize)
-            raw_action_with_entropy = dict(raw_action)
-            raw_action_with_entropy["mean_entropy"] = selected_entropy
-            predicted_actions.append(raw_action_with_entropy)
+            # Store for visualization
+            predicted_actions.append(raw_action)
+
+            # MC-style JSON logging per timestep
+            if mc_logging:
+                timestep_log = {
+                    "timestep": timestep,
+                    "token_argmax": [],
+                    "token_entropy": [],
+                    "differential_entropy": _ensure_serializable({
+                        "total_entropy": total_entropy,
+                        "aleatoric_entropy": aleatoric_entropy,
+                        "epistemic_entropy": epistemic_entropy,
+                    }),
+                    "mean_action": _ensure_serializable({
+                        "world_vector": raw_action["world_vector"],
+                        "rotation_delta": raw_action["rotation_delta"],
+                        "gripper_closedness_action": raw_action["open_gripper"],
+                    }),
+                    "selected_entropy": _ensure_serializable(selected_entropy),
+                    "info": _ensure_serializable(info) if 'info' in locals() else {},
+                }
+                trajectory.append(timestep_log)
 
             obs, reward, done, truncated, info = env.step(
                 np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
@@ -287,6 +372,30 @@ def run_maniskill2_eval_single_episode(
     video_path = os.path.join(logging_dir, video_path)
     write_video(video_path, images, fps=5)
 
+    # mc-style JSON and video saving
+    if mc_logging and total_episodes is not None:
+        exp_tag = f"exp{getattr(model, '_batched_experimental_setup', 1)}"
+        num_mc = getattr(model, "_batched_num_mc_inferences", 10)
+        mc_root = f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}"
+        json_dir = os.path.join(logging_dir, mc_root, "json")
+        video_dir = os.path.join(logging_dir, mc_root, "video")
+        os.makedirs(json_dir, exist_ok=True)
+        os.makedirs(video_dir, exist_ok=True)
+
+        success_bool = (success == "success")
+        episode_zero_based = (episode_idx - 1) if episode_idx is not None else 0
+        json_path = os.path.join(json_dir, f"{str(success_bool)}_{episode_zero_based}.json")
+        video_mc_path = os.path.join(video_dir, f"{str(success_bool)}_{episode_zero_based}.mp4")
+
+        try:
+            if trajectory is not None:
+                import json as _json
+                with open(json_path, "w") as f:
+                    _json.dump(trajectory, f, indent=2)
+            write_video(video_mc_path, images, fps=5)
+        except Exception as e:
+            print(f"Error saving MC-style episode data or video: {e}")
+
     # save action trajectory
     action_path = video_path.replace(".mp4", ".png")
     action_root = os.path.dirname(action_path) + "/actions/"
@@ -338,6 +447,7 @@ def maniskill2_evaluator(model, args):
                     additional_env_save_tags=args.additional_env_save_tags,
                     obs_camera_name=args.obs_camera_name,
                     logging_dir=args.logging_dir,
+                    mc_logging=getattr(args, "mc_logging", False) and getattr(model, "batch_step", None) is not None,
                 )
                 if args.obj_variation_mode == "xy":
                     for obj_init_x in args.obj_init_xs:

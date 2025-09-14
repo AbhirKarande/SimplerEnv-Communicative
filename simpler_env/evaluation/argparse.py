@@ -141,6 +141,11 @@ def get_args():
         default=0,
         help="Random seed for experimental setup 2 action selection",
     )
+    parser.add_argument(
+        "--mc-logging",
+        action="store_true",
+        help="Save per-episode JSON and video in mc_close_drawer_10.py style",
+    )
 
     args = parser.parse_args()
 

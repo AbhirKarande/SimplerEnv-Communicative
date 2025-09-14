@@ -2,6 +2,9 @@
 
 
 
+EXP_SETUP=${EXP_SETUP:-1}                # 1 or 2
+MC_PASSES=${MC_PASSES:-20}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 declare -a policy_models=(
 "octo-base"
 # "octo-server"
@@ -33,7 +36,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.03 -0.03 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a0.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # A1
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -44,7 +47,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.02 -0.02 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a1.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # A2
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -55,7 +58,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.06 -0.06 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a2.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # B0
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -66,7 +69,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b0.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # B1
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -77,7 +80,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b1.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # B2
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -88,7 +91,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b2.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # C0
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -99,7 +102,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c0.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # C1
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -110,7 +113,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c1.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 
 # C2
 python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -121,7 +124,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c2.png \
-  ${EXTRA_ARGS}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
 }
 
 

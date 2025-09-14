@@ -7,6 +7,11 @@ LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
 LOG_DIR="$LOG_ROOT/simpler_env_results"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
+# Batched MC Dropout settings (override via environment if desired)
+EXP_SETUP=${EXP_SETUP:-1}                # 1 or 2
+MC_PASSES=${MC_PASSES:-20}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
+
 declare -a policy_models=(
   "octo-base"
   # "octo-server"
@@ -37,6 +42,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.09 -0.09 1 \
   --additional-env-build-kwargs urdf_version=${urdf_version} \
   --additional-env-save-tags baked_except_bpb_orange \
+  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} \
   --logging-dir "$LOG_DIR"; # google_move_near_real_eval_1.png
 
 # do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
