@@ -8,9 +8,9 @@ LOG_DIR="$LOG_ROOT/simpler_env_results"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
 # Batched MC Dropout settings (override via environment if desired)
-EXP_SETUP=${EXP_SETUP:2}                # 1 or 2
-MC_PASSES=${MC_PASSES:20}               # e.g., 10, 20, 40
-SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:30}
+EXP_SETUP=${EXP_SETUP:-2}                # 1 or 2
+MC_PASSES=${MC_PASSES:-20}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 
 declare -a policy_models=(
   "octo-base"
@@ -42,7 +42,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --control-freq 3 --sim-freq 501 --max-episode-steps 80 \
   --env-name ${env_name} --scene-name ${scene_name} \
   --rgb-overlay-path ${rgb_overlay_path} \
-  --robot-init-x 0.35 0.35 1 --robot-init-y 0.20 0.20 1 --obj-init-x -0.35 -0.12 5 --obj-init-y -0.02 0.42 5 \
+  --robot-init-x-range 0.35 0.35 1 --robot-init-y-range 0.20 0.20 1 --obj-init-x-range -0.35 -0.12 5 --obj-init-y-range -0.02 0.42 5 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-build-kwargs ${coke_can_option} urdf_version=${urdf_version} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} \

@@ -2,9 +2,9 @@
 
 
 
-EXP_SETUP=${EXP_SETUP:2}                # 1 or 2
-MC_PASSES=${MC_PASSES:20}               # e.g., 10, 20, 40
-SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:30}
+EXP_SETUP=${EXP_SETUP:-2}                # 1 or 2
+MC_PASSES=${MC_PASSES:-20}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 declare -a policy_models=(
 "octo-base"
 # "octo-server"
@@ -32,7 +32,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.644 0.644 1 --robot-init-y -0.179 -0.179 1 \
+  --robot-init-x-range 0.644 0.644 1 --robot-init-y-range -0.179 -0.179 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.03 -0.03 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a0.png \
@@ -43,7 +43,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.765 0.765 1 --robot-init-y -0.182 -0.182 1 \
+  --robot-init-x-range 0.765 0.765 1 --robot-init-y-range -0.182 -0.182 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.02 -0.02 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a1.png \
@@ -54,7 +54,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.889 0.889 1 --robot-init-y -0.203 -0.203 1 \
+  --robot-init-x-range 0.889 0.889 1 --robot-init-y-range -0.203 -0.203 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.06 -0.06 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a2.png \
@@ -65,7 +65,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.652 0.652 1 --robot-init-y 0.009 0.009 1 \
+  --robot-init-x-range 0.652 0.652 1 --robot-init-y-range 0.009 0.009 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b0.png \
@@ -76,7 +76,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.752 0.752 1 --robot-init-y 0.009 0.009 1 \
+  --robot-init-x-range 0.752 0.752 1 --robot-init-y-range 0.009 0.009 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b1.png \
@@ -87,7 +87,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.851 0.851 1 --robot-init-y 0.035 0.035 1 \
+  --robot-init-x-range 0.851 0.851 1 --robot-init-y-range 0.035 0.035 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b2.png \
@@ -98,7 +98,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.665 0.665 1 --robot-init-y 0.224 0.224 1 \
+  --robot-init-x-range 0.665 0.665 1 --robot-init-y-range 0.224 0.224 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c0.png \
@@ -109,7 +109,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.765 0.765 1 --robot-init-y 0.222 0.222 1 \
+  --robot-init-x-range 0.765 0.765 1 --robot-init-y-range 0.222 0.222 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c1.png \
@@ -120,7 +120,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
-  --robot-init-x 0.865 0.865 1 --robot-init-y 0.222 0.222 1 \
+  --robot-init-x-range 0.865 0.865 1 --robot-init-y-range 0.222 0.222 1 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c2.png \
