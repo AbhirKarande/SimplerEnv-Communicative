@@ -1,4 +1,5 @@
 import argparse
+import os
 
 import numpy as np
 from sapien.core import Pose
@@ -148,6 +149,30 @@ def get_args():
     )
 
     args = parser.parse_args()
+
+    # Prefer persistent scratch for logging if user did not override logging_dir
+    if args.logging_dir == "./results" or args.logging_dir is None:
+        candidate_roots = []
+        user = os.environ.get("USER", "")
+        if user:
+            candidate_roots.append(f"/scratch1/{user}")
+        candidate_roots.extend([
+            os.environ.get("SCRATCH", None),
+            os.environ.get("TMPDIR", None),
+            "/tmp",
+        ])
+        chosen_root = None
+        for root in candidate_roots:
+            if root and os.path.isdir(root) and os.access(root, os.W_OK):
+                chosen_root = root
+                break
+        if chosen_root is None:
+            chosen_root = "/tmp"
+        args.logging_dir = os.path.join(chosen_root, "simpler_env_results")
+        try:
+            os.makedirs(args.logging_dir, exist_ok=True)
+        except Exception:
+            pass
 
     # env args: robot pose
     args.robot_init_xs = parse_range_tuple(args.robot_init_x_range)

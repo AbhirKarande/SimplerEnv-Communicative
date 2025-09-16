@@ -2,8 +2,14 @@
 
 gpu_id=0
 
-# Set a logging directory (prefer node-local scratch if available)
+# Set a logging directory (prefer persistent HPC scratch if available)
+if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
+LOG_ROOT="/scratch1/$USER"
+elif [ -n "${SCRATCH:-}" ] && [ -d "${SCRATCH:-}" ] && [ -w "${SCRATCH:-}" ]; then
+LOG_ROOT="${SCRATCH}"
+else
 LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
+fi
 LOG_DIR="$LOG_ROOT/simpler_env_results"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
