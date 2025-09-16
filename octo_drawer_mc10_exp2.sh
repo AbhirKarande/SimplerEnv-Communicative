@@ -12,5 +12,5 @@
 module purge
 module load apptainer
 
-apptainer exec --bind $PWD,/scratch1/$USER --nv --writable-tmpfs simplerenv.sif /bin/bash -c ". /opt/miniconda/etc/profile.d/conda.sh && conda activate simpler_env && cd /opt/SimplerEnv-Communicative && git fetch && git pull && git checkout drawer_mc10_exp2 &&  cd scripts && chmod +x octo_move_near_visual_matching.sh && cd .. && /opt/SimplerEnv-Communicative/scripts/octo_move_near_visual_matching.sh"
+apptainer exec --bind $PWD,/scratch1/$USER --nv --writable-tmpfs simplerenv.sif /bin/bash -c ". /opt/miniconda/etc/profile.d/conda.sh && conda activate simpler_env && cd /opt/SimplerEnv-Communicative && git fetch && git pull && git checkout drawer_mc10_exp2 &&  cd scripts && chmod +x octo_drawer_visual_matching.sh && cd .. && /opt/SimplerEnv-Communicative/scripts/octo_drawer_visual_matching.sh"
 
