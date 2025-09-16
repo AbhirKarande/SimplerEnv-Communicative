@@ -7,7 +7,7 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --gpus-per-task=a40:1
 #SBATCH --mem=32G
-#SBATCH --time=3:00:00
+#SBATCH --time=24:00:00
 
 module purge
 module load apptainer
