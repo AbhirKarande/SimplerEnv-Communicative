@@ -534,6 +534,11 @@ for episode_id in range(start_episode, num_episodes):
             "token_entropy": token_entropy_data, # Keeping for schema consistency
             "differential_entropy": ensure_serializable(differential_entropy),
             "mean_action": ensure_serializable(mean_action_log),
+            "raw_action": ensure_serializable({
+                "world_vector": raw_action["world_vector"],
+                "rotation_delta": raw_action["rotation_delta"],
+                "open_gripper": raw_action["open_gripper"],
+            }),
             "info": ensure_serializable(info)
         }
         trajectory.append(timestep_log)

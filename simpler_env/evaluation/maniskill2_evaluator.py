@@ -302,6 +302,11 @@ def run_maniskill2_eval_single_episode(
                         "rotation_delta": raw_action["rotation_delta"],
                         "gripper_closedness_action": raw_action["open_gripper"],
                     }),
+                    "raw_action": _ensure_serializable({
+                        "world_vector": raw_action["world_vector"],
+                        "rotation_delta": raw_action["rotation_delta"],
+                        "open_gripper": raw_action["open_gripper"],
+                    }),
                     "selected_entropy": _ensure_serializable(selected_entropy),
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
                 }
