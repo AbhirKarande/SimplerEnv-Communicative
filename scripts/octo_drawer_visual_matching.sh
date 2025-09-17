@@ -2,6 +2,19 @@
 
 
 
+gpu_id=0
+
+# Set a logging directory (prefer persistent HPC scratch if available)
+if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
+LOG_ROOT="/scratch1/$USER"
+elif [ -n "${SCRATCH:-}" ] && [ -d "${SCRATCH:-}" ] && [ -w "${SCRATCH:-}" ]; then
+LOG_ROOT="${SCRATCH}"
+else
+LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
+fi
+LOG_DIR="$LOG_ROOT/simpler_env_results"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
 EXP_SETUP=${EXP_SETUP:-2}                # 1 or 2
 MC_PASSES=${MC_PASSES:-10}               # e.g., 10, 20, 40
 SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
@@ -28,7 +41,7 @@ EXTRA_ARGS="--enable-raytracing --additional-env-build-kwargs station_name=mk_st
 
 EvalOverlay() {
 # A0
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -36,10 +49,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.03 -0.03 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # A1
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -47,10 +60,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.02 -0.02 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # A2
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -58,10 +71,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.06 -0.06 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # B0
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -69,10 +82,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # B1
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -80,10 +93,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # B2
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -91,10 +104,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # C0
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -102,10 +115,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # C1
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -113,10 +126,10 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 
 # C2
-python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static \
   --control-freq 3 --sim-freq 513 --max-episode-steps 113 \
   --env-name ${env_name} --scene-name dummy_drawer \
@@ -124,7 +137,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE}
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
 }
 
 
