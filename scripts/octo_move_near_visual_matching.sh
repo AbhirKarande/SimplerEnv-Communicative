@@ -49,6 +49,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --additional-env-build-kwargs urdf_version=${urdf_version} \
   --additional-env-save-tags baked_except_bpb_orange \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} \
+  --mc-logging \
   --logging-dir "$LOG_DIR"; # google_move_near_real_eval_1.png
 
 # do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
