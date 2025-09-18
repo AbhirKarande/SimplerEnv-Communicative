@@ -433,6 +433,15 @@ for episode_id in range(start_episode, num_episodes):
         per_inference_means_wv = np.mean([np.stack([res[0]["world_vector"] for res in r]) for r in all_results], axis=1)
         per_inference_means_rot = np.mean([np.stack([res[0]["rotation_delta"] for res in r]) for r in all_results], axis=1)
         per_inference_means_grip = np.mean([np.stack([res[0]["open_gripper"] for res in r]) for r in all_results], axis=1)
+        # Build list of forward pass actions (mean per MC pass)
+        forward_pass_actions = [
+          {
+            "world_vector": per_inference_means_wv[i],
+            "rotation_delta": per_inference_means_rot[i],
+            "open_gripper": per_inference_means_grip[i],
+          }
+          for i in range(per_inference_means_wv.shape[0])
+        ]
 
         per_inference_vars_wv = np.mean([np.var(np.stack([res[0]["world_vector"] for res in r]), axis=0) for r in all_results], axis=0)
         per_inference_vars_rot = np.mean([np.var(np.stack([res[0]["rotation_delta"] for res in r]), axis=0) for r in all_results], axis=0)
@@ -534,6 +543,12 @@ for episode_id in range(start_episode, num_episodes):
             "token_entropy": token_entropy_data, # Keeping for schema consistency
             "differential_entropy": ensure_serializable(differential_entropy),
             "mean_action": ensure_serializable(mean_action_log),
+          "raw_action": ensure_serializable({
+            "world_vector": raw_action["world_vector"],
+            "rotation_delta": raw_action["rotation_delta"],
+            "open_gripper": raw_action["open_gripper"],
+            "forward_pass_actions": forward_pass_actions,
+          }),
             "info": ensure_serializable(info)
         }
         trajectory.append(timestep_log)

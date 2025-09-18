@@ -163,6 +163,8 @@ def run_maniskill2_eval_single_episode(
             per_pass_wv_all = []
             per_pass_rot_all = []
             per_pass_grip_all = []
+            # Also collect forward-pass actions (per MC pass mean actions) for logging
+            forward_pass_actions = []
             epsilon = 1e-8
             for one_inference_results in all_results:
                 per_pass_wv = np.stack([res[0]["world_vector"] for res in one_inference_results])
@@ -187,12 +189,14 @@ def run_maniskill2_eval_single_episode(
                     "open_gripper": 0.5 * np.log(2 * np.pi * np.e * (var_grip + epsilon)),
                 }
 
-                per_pass_mean_actions.append({
+                mean_action_dict = {
                     "world_vector": mean_wv,
                     "rotation_delta": mean_rot,
                     "open_gripper": mean_grip,
-                })
+                }
+                per_pass_mean_actions.append(mean_action_dict)
                 per_pass_mean_entropies.append(entropy)
+                forward_pass_actions.append(mean_action_dict)
 
             # Compute total, aleatoric, epistemic entropies for logging
             all_raw_actions_world_vector = np.concatenate(per_pass_wv_all, axis=0)
@@ -306,6 +310,8 @@ def run_maniskill2_eval_single_episode(
                         "world_vector": raw_action["world_vector"],
                         "rotation_delta": raw_action["rotation_delta"],
                         "open_gripper": raw_action["open_gripper"],
+                        # Include each MC forward pass's mean action for analysis
+                        "forward_pass_actions": forward_pass_actions,
                     }),
                     "selected_entropy": _ensure_serializable(selected_entropy),
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
