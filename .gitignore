@@ -27,3 +27,4 @@ dist/
 .vscode
 
 imgui.ini
+*.sif
