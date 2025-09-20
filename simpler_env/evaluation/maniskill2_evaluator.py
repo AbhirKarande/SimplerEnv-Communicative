@@ -387,7 +387,17 @@ def run_maniskill2_eval_single_episode(
     if mc_logging and total_episodes is not None:
         exp_tag = f"exp{getattr(model, '_batched_experimental_setup', 1)}"
         num_mc = getattr(model, "_batched_num_mc_inferences", 10)
-        mc_root = f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}"
+        mc_root_base = f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}"
+        # add subdirectories to avoid overwriting across URDF variants and overlay presets
+        try:
+            overlay_tag = os.path.splitext(os.path.basename(rgb_overlay_path))[0] if rgb_overlay_path is not None else "None"
+        except Exception:
+            overlay_tag = "None"
+        try:
+            urdf_version = additional_env_build_kwargs.get("urdf_version", "None") if isinstance(additional_env_build_kwargs, dict) else "None"
+        except Exception:
+            urdf_version = "None"
+        mc_root = os.path.join(mc_root_base, f"urdf_{urdf_version}", f"overlay_{overlay_tag}")
         json_dir = os.path.join(logging_dir, mc_root, "json")
         video_dir = os.path.join(logging_dir, mc_root, "video")
         os.makedirs(json_dir, exist_ok=True)
