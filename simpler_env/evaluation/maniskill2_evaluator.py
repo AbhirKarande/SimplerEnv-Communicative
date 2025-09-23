@@ -8,6 +8,7 @@ import numpy as np
 from transforms3d.euler import quat2euler, euler2axangle
 
 from simpler_env.utils.env.env_builder import build_maniskill2_env, get_robot_control_mode
+from simpler_env.evaluation.instruction_refinement import InstructionRefiner
 from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
 from simpler_env.utils.visualization import write_video
 
@@ -60,6 +61,8 @@ def run_maniskill2_eval_single_episode(
     episode_idx=None,
     total_episodes=None,
     mc_logging=False,
+    instruction_refine_procedure: int = 0,
+    instruction_refine_task: str = "auto",
 ):
 
     if additional_env_build_kwargs is None:
@@ -128,6 +131,34 @@ def run_maniskill2_eval_single_episode(
 
     # Initialize model
     model.reset(task_description)
+
+    # Initialize optional instruction refiner
+    refiner = None
+    if instruction_refine_procedure in (1, 2):
+        # Decide task kind if set to auto
+        if instruction_refine_task == "auto":
+            # Simple heuristic: map by env_name
+            if "pick" in env_name.lower() or "coke" in env_name.lower():
+                task_kind = "pick_coke_can"
+            elif "drawer" in env_name.lower():
+                task_kind = "close_drawer"
+            else:
+                task_kind = "pick_coke_can"
+        else:
+            task_kind = instruction_refine_task
+
+        # task_name string passed to LLM (human-readable)
+        task_name_for_llm = env_name
+        refiner = InstructionRefiner(
+            task_kind=task_kind,
+            procedure=instruction_refine_procedure,
+            logging_dir=logging_dir,
+            model_type=str(getattr(model, "policy_setup", "google_robot")),
+            task_name=task_name_for_llm,
+        )
+
+    # Whether to honor env-provided instruction updates
+    allow_env_updates = True
 
     # Initialize RNG for experimental setup 2 (uniform selection across MC passes)
     batched_choice_rng = None
@@ -290,6 +321,24 @@ def run_maniskill2_eval_single_episode(
             # Store for visualization
             predicted_actions.append(raw_action)
 
+            # Instruction refinement (batched path uses raw_action dict with rotation_delta/world_vector)
+            if refiner is not None:
+                try:
+                    new_task_description, did_refine = refiner.maybe_refine(
+                        raw_action=raw_action,
+                        timestep=timestep,
+                        current_instruction=task_description,
+                        image_np=image,
+                    )
+                    if did_refine and isinstance(new_task_description, str) and new_task_description:
+                        task_description = new_task_description
+                        # Update model with refined instruction
+                        model.reset(task_description)
+                        print(f"[Refined Instruction @ t={timestep}] {task_description}")
+                        allow_env_updates = False
+                except Exception as e:
+                    print(f"Refinement error: {e}")
+
             # Per-timestep JSON logging (only action and raw_action)
             if mc_logging:
                 timestep_log = {
@@ -323,16 +372,34 @@ def run_maniskill2_eval_single_episode(
                     predicted_terminated = False
                     env.advance_to_next_subtask()
 
+            # Instruction refinement (non-batched path has same raw_action structure)
+            if refiner is not None:
+                try:
+                    new_task_description, did_refine = refiner.maybe_refine(
+                        raw_action=raw_action,
+                        timestep=timestep,
+                        current_instruction=task_description,
+                        image_np=image,
+                    )
+                    if did_refine and isinstance(new_task_description, str) and new_task_description:
+                        task_description = new_task_description
+                        model.reset(task_description)
+                        print(f"[Refined Instruction @ t={timestep}] {task_description}")
+                        allow_env_updates = False
+                except Exception as e:
+                    print(f"Refinement error: {e}")
+
             # step the environment
             obs, reward, done, truncated, info = env.step(
                 np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
             )
         
         success = "success" if done else "failure"
-        new_task_description = env.get_language_instruction()
-        if new_task_description != task_description:
-            task_description = new_task_description
-            print(task_description)
+        if allow_env_updates:
+            new_task_description = env.get_language_instruction()
+            if new_task_description != task_description:
+                task_description = new_task_description
+                print(task_description)
         is_final_subtask = env.is_final_subtask()
 
         if episode_idx is not None:
@@ -459,6 +526,8 @@ def maniskill2_evaluator(model, args):
                     obs_camera_name=args.obs_camera_name,
                     logging_dir=args.logging_dir,
                     mc_logging=getattr(args, "mc_logging", False) and getattr(model, "batch_step", None) is not None,
+                    instruction_refine_procedure=getattr(args, "instruction_refine_procedure", 0),
+                    instruction_refine_task=getattr(args, "instruction_refine_task", "auto"),
                 )
                 if args.obj_variation_mode == "xy":
                     for obj_init_x in args.obj_init_xs:

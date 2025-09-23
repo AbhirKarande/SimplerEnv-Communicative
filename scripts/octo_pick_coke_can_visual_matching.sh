@@ -1,6 +1,8 @@
 
 
 gpu_id=0
+# Instruction refinement (choose 0, 1, or 2). Default disabled.
+INSTR_PROC=${INSTR_PROC:-0}
 
 # Set a logging directory (prefer persistent HPC scratch if available)
 if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
@@ -52,6 +54,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-build-kwargs ${coke_can_option} urdf_version=${urdf_version} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} \
+  --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task pick_coke_can \
   --mc-logging \
   --logging-dir "$LOG_DIR";
 

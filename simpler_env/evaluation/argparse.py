@@ -148,6 +148,22 @@ def get_args():
         help="Save per-episode JSON and video in mc_close_drawer_10.py style",
     )
 
+    # Instruction refinement options
+    parser.add_argument(
+        "--instruction-refine-procedure",
+        type=int,
+        default=0,
+        choices=[0, 1, 2],
+        help="0: disabled; 1: orientation-only rule (3 steps); 2: pos-or-orient rule (5 steps)",
+    )
+    parser.add_argument(
+        "--instruction-refine-task",
+        type=str,
+        default="auto",
+        choices=["auto", "pick_coke_can", "close_drawer"],
+        help="Distribution set to use for refinement distance calculation.",
+    )
+
     args = parser.parse_args()
 
     # Prefer persistent scratch for logging if user did not override logging_dir
