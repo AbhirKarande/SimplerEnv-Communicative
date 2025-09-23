@@ -48,7 +48,7 @@ def send_request(
     image_content=[],
     model="meta-llama/llama-4-maverick-17b-128e-instruct",
     api_endpoint="https://api.groq.com/openai/v1/chat/completions",
-    api_key="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",
+    api_key=None,
     delay=15,
 ):
     """
@@ -57,7 +57,7 @@ def send_request(
     """
     if not api_key:
         # Get API key from env var if it isn't passed to this function
-        api_key = "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"
+        api_key = os.environ.get("GROQ_API_KEY", "")
 
     if api_key == "":
         return None
