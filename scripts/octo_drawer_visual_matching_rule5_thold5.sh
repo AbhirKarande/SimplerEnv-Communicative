@@ -4,6 +4,9 @@
 
 gpu_id=0
 
+# Instruction refinement (choose 0, 1, or 2). Default disabled.
+INSTR_PROC=${INSTR_PROC:-2}
+
 # Set a logging directory (prefer persistent HPC scratch if available)
 if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
 LOG_ROOT="/scratch1/$USER"
@@ -46,7 +49,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.03 -0.03 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # A1
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -57,7 +60,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.02 -0.02 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # A2
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -68,7 +71,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.06 -0.06 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_a2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # B0
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -79,7 +82,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # B1
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -90,7 +93,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # B2
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -101,7 +104,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_b2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # C0
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -112,7 +115,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c0.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # C1
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -123,7 +126,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c1.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 
 # C2
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
@@ -134,7 +137,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 -0.025 -0.025 1 \
   --obj-init-x-range 0 0 1 --obj-init-y-range 0 0 1 \
   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c2.png \
-  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR"
+  ${EXTRA_ARGS} --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --instruction-refine-procedure ${INSTR_PROC} --instruction-refine-task close_drawer --mc-logging --logging-dir "$LOG_DIR"
 }
 
 
