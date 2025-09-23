@@ -353,6 +353,7 @@ def run_maniskill2_eval_single_episode(
                         "rotation_delta": raw_action["rotation_delta"],
                         "open_gripper": raw_action["open_gripper"],
                     }),
+                    "current_instruction": task_description,
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
                 }
                 trajectory.append(timestep_log)
