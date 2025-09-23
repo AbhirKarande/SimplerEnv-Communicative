@@ -10,7 +10,7 @@ LOG_ROOT="${SCRATCH}"
 else
 LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
 fi
-LOG_DIR="$LOG_ROOT/simpler_env_results"
+LOG_DIR="$LOG_ROOT/simpler_env_results-lr"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
 # Batched MC Dropout settings (override via environment if desired)
