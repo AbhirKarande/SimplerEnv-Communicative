@@ -15,7 +15,7 @@ mkdir -p "$LOG_DIR" 2>/dev/null || true
 
 # Batched MC Dropout settings (override via environment if desired)
 EXP_SETUP=${EXP_SETUP:-1}                # 1 or 2
-MC_PASSES=${MC_PASSES:-40}               # e.g., 10, 20, 40
+MC_PASSES=${MC_PASSES:-10}               # e.g., 10, 20, 40
 SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 
 declare -a policy_models=(
