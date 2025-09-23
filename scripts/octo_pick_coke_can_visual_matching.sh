@@ -10,7 +10,7 @@ LOG_ROOT="${SCRATCH}"
 else
 LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
 fi
-LOG_DIR="$LOG_ROOT/simpler_env_results"
+LOG_DIR="$LOG_ROOT/simpler_env_results-lr"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
 # Batched MC Dropout settings (override via environment if desired)
@@ -25,7 +25,7 @@ declare -a policy_models=(
 )
 
 # lr_switch=laying horizontally but flipped left-right to match real eval; upright=standing; laid_vertically=laying vertically
-declare -a coke_can_options_arr=("lr_switch=True" "upright=True" "laid_vertically=True")
+declare -a coke_can_options_arr=("lr_switch=True" "upright=False" "laid_vertically=False")
 
 # URDF variations
 declare -a urdf_version_arr=(None "recolor_tabletop_visual_matching_1" "recolor_tabletop_visual_matching_2" "recolor_cabinet_visual_matching_1")
