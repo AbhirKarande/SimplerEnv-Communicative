@@ -15,9 +15,9 @@ fi
 LOG_DIR="$LOG_ROOT/simpler_env_results"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
-EXP_SETUP=${EXP_SETUP:-2}                # 1 or 2
-MC_PASSES=${MC_PASSES:-10}               # e.g., 10, 20, 40
-SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
+EXP_SETUP=${EXP_SETUP:-1}                # 1 or 2
+MC_PASSES=${MC_PASSES:-1}               # e.g., 10, 20, 40
+SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-1}
 declare -a policy_models=(
 "octo-base"
 # "octo-server"

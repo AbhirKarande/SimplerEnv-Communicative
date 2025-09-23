@@ -290,30 +290,20 @@ def run_maniskill2_eval_single_episode(
             # Store for visualization
             predicted_actions.append(raw_action)
 
-            # MC-style JSON logging per timestep
+            # Per-timestep JSON logging (only action and raw_action)
             if mc_logging:
                 timestep_log = {
                     "timestep": timestep,
-                    "token_argmax": [],
-                    "token_entropy": [],
-                    "differential_entropy": _ensure_serializable({
-                        "total_entropy": total_entropy,
-                        "aleatoric_entropy": aleatoric_entropy,
-                        "epistemic_entropy": epistemic_entropy,
-                    }),
-                    "mean_action": _ensure_serializable({
-                        "world_vector": raw_action["world_vector"],
-                        "rotation_delta": raw_action["rotation_delta"],
-                        "gripper_closedness_action": raw_action["open_gripper"],
+                    "action": _ensure_serializable({
+                        "world_vector": action["world_vector"],
+                        "rot_axangle": action["rot_axangle"],
+                        "gripper": action["gripper"],
                     }),
                     "raw_action": _ensure_serializable({
                         "world_vector": raw_action["world_vector"],
                         "rotation_delta": raw_action["rotation_delta"],
                         "open_gripper": raw_action["open_gripper"],
-                        # Include each MC forward pass's mean action for analysis
-                        "forward_pass_actions": forward_pass_actions,
                     }),
-                    "selected_entropy": _ensure_serializable(selected_entropy),
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
                 }
                 trajectory.append(timestep_log)
