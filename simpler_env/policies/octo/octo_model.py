@@ -127,7 +127,7 @@ class OctoInference:
         # self.gripper_is_closed = False
         self.previous_gripper_action = None
 
-    def step(self, image: np.ndarray, task_description: Optional[str] = None, *args, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict]:
+    def step(self, image: np.ndarray, task_description: Optional[str] = None, *args, **kwargs) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray]]:
         """
         Input:
             image: np.ndarray of shape (H, W, 3), uint8
@@ -139,7 +139,7 @@ class OctoInference:
                 - 'rot_axangle': np.ndarray of shape (3,), axis-angle representation of end-effector rotation
                 - 'gripper': np.ndarray of shape (1,), gripper action
                 - 'terminate_episode': np.ndarray of shape (1,), 1 if episode should be terminated, 0 otherwise
-            action_info: dict; additional information about the sampled actions from the model
+            (action_info removed)
         """
         if task_description is not None:
             if task_description != self.task_description:
@@ -157,12 +157,11 @@ class OctoInference:
         # print("octo local rng", self.rng, key)
 
         input_observation = {"image_primary": images, "pad_mask": pad_mask}
-        norm_raw_actions, action_info = self.model.sample_actions(
+        norm_raw_actions, _ = self.model.sample_actions(
             input_observation,
             self.task,
             rng=key,
         )
-        print("action info", action_info)
         raw_actions = norm_raw_actions * self.action_std[None] + self.action_mean[None]
         raw_actions = raw_actions[0]  # remove batch, becoming (action_pred_horizon, action_dim)
 
@@ -241,7 +240,7 @@ class OctoInference:
 
         action["terminate_episode"] = np.array([0.0])
 
-        return raw_action, action, action_info
+        return raw_action, action
 
     def visualize_epoch(self, predicted_raw_actions: Sequence[np.ndarray], images: Sequence[np.ndarray], save_path: str) -> None:
         images = [self._resize_image(image) for image in images]
@@ -280,7 +279,7 @@ class BatchedOctoInference(OctoInference):
         image: Optional[np.ndarray],
         num_inferences: int,
         task_description: Optional[str] = None,
-    ) -> list[tuple[dict[str, np.ndarray], dict[str, np.ndarray], dict]]:
+    ) -> list[tuple[dict[str, np.ndarray], dict[str, np.ndarray]]]:
         if task_description is not None and task_description != self.task_description:
             self.reset(task_description)
 
@@ -300,7 +299,7 @@ class BatchedOctoInference(OctoInference):
         self.rng, key = jax.random.split(self.rng)
 
         # Perform batched inference in a single call using sample_shape
-        norm_raw_actions_batch, action_info_batch = self.model.sample_actions(
+        norm_raw_actions_batch, _ = self.model.sample_actions(
             input_observation,
             self.task,
             rng=key,
@@ -311,15 +310,6 @@ class BatchedOctoInference(OctoInference):
         # Squeeze the batch dimension.
         norm_raw_actions_batch = norm_raw_actions_batch.squeeze(axis=1)
 
-        # Some tensors in action_info_batch might have the history dimension instead of a batch dimension.
-        # Squeeze conditionally to handle this inconsistency.
-        def safe_squeeze(x):
-            if hasattr(x, "shape") and len(x.shape) > 1 and x.shape[1] == 1:
-                return x.squeeze(axis=1)
-            return x
-
-        action_info_batch = jax.tree_map(safe_squeeze, action_info_batch)
-
         raw_actions_batch = (
             norm_raw_actions_batch * self.action_std[None] + self.action_mean[None]
         )
@@ -327,8 +317,6 @@ class BatchedOctoInference(OctoInference):
         results = []
         for i in range(num_inferences):
             raw_actions = raw_actions_batch[i]  # (pred_action_horizon, 7)
-
-            action_info = jax.tree_map(lambda x: x[i], action_info_batch)
 
             assert raw_actions.shape == (self.pred_action_horizon, 7)
             if self.action_ensemble:
@@ -371,6 +359,6 @@ class BatchedOctoInference(OctoInference):
                 action["gripper"] = 2.0 * (raw_action["open_gripper"] > 0.5) - 1.0
 
             action["terminate_episode"] = np.array([0.0])
-            results.append((raw_action, action, action_info))
+            results.append((raw_action, action))
 
         return results
