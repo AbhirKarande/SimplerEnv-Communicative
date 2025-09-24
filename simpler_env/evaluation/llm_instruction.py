@@ -3,24 +3,44 @@ import os
 import requests
 import time
 
-prompt_template = """
+prompt_template_proc1 = """
 You are a robotics expert providing refined instructions to an AI robot model ({model_type}).
 The robot is performing a task called '{task_name}' which is about {task_context}.
 The initial instruction was: "{initial_instruction}".
 It is currently at timestep {current_timestep}.
 
-The policy model is exhibiting low confidence, indicated by low entropy in the following action dimensions: {action_dim}.
-This might mean the robot is "stuck" or "hesitant".
+We are using Procedure 1: orientation-focused refinement. The model's actions suggest uncertainty specifically in orientation (rotation) dimensions: {action_dim}.
+Provide a refined, orientation-specific command that helps adjust the gripper's orientation to make progress. Keep it short and immediately actionable.
 
 Here is the last frame from the robot's camera:
 
-Your task is to provide a new, more specific, and actionable instruction to help the robot proceed with the task.
-The instruction should be a short command, guiding the next immediate action.
-Focus on what the robot should do right now based on the visual evidence.
-Do not ask questions. Provide only the refined instruction.
+Constraints:
+- One concise imperative sentence.
+- Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
+- Do not ask questions. Output only the instruction.
 
-Example of a good refined instruction: "push the red block slightly to the left."
-Example of a bad refined instruction: "Can you see the red block? If so, push it."
+Example: "rotate the gripper slightly clockwise around the vertical axis to align with the handle."
+
+Refined Instruction:
+"""
+
+prompt_template_proc2 = """
+You are a robotics expert providing refined instructions to an AI robot model ({model_type}).
+The robot is performing a task called '{task_name}' which is about {task_context}.
+The initial instruction was: "{initial_instruction}".
+It is currently at timestep {current_timestep}.
+
+We are using Procedure 2: position-orientation refinement. The model's actions suggest uncertainty in these dimensions: {action_dim}.
+Provide a refined command targeting position (x,y,z), orientation (roll,pitch,yaw), or both, choosing whichever is most immediately helpful. Keep it short and directly actionable.
+
+Here is the last frame from the robot's camera:
+
+Constraints:
+- One concise imperative sentence.
+- Focus on a single next step (e.g., nudge position, adjust angle, approach object).
+- Do not ask questions. Output only the instruction.
+
+Example: "move the gripper forward and slightly down toward the drawer handle."
 
 Refined Instruction:
 """
@@ -95,11 +115,13 @@ def generate_instruction(
     task_name="google_robot_move_near",
     task_context="a robotic manipulation task",
     api_key=None,
+    procedure: int = 1,
 ):
     """
     Generate new instruction using LLM
     """
-    prompt = prompt_template.format(
+    tmpl = prompt_template_proc1 if int(procedure) == 1 else prompt_template_proc2
+    prompt = tmpl.format(
         model_type=model_type,
         task_name=task_name,
         task_context=task_context,

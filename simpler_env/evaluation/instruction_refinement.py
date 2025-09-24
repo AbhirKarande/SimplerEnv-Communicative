@@ -239,6 +239,7 @@ class InstructionRefiner:
                     task_name=self.task_name,
                     task_context="a robotic manipulation task",
                     api_key=None,
+                    procedure=self.procedure,
                 )
                 # Reset counter so that the condition must be satisfied again before next refinement
                 self._consec_counter = 0
