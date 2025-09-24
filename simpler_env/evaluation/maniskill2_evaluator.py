@@ -443,7 +443,7 @@ def run_maniskill2_eval_single_episode(
 
     # mc-style JSON and video saving
     if mc_logging and total_episodes is not None:
-        exp_tag = f"exp{getattr(model, '_batched_experimental_setup', 1)}"
+        exp_tag = f"exp{instruction_refine_procedure}"
         num_mc = getattr(model, "_batched_num_mc_inferences", 10)
         mc_root_base = f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}"
         # add subdirectories to avoid overwriting across URDF variants and overlay presets
@@ -455,7 +455,21 @@ def run_maniskill2_eval_single_episode(
             urdf_version = additional_env_build_kwargs.get("urdf_version", "None") if isinstance(additional_env_build_kwargs, dict) else "None"
         except Exception:
             urdf_version = "None"
+
+        other_args = []
+        try:
+            if isinstance(additional_env_build_kwargs, dict):
+                for k, v in additional_env_build_kwargs.values():
+                    if k != "urdf_version":
+                        other_args.append(f"{k}_{v}")
+        except Exception:
+            pass
+
         mc_root = os.path.join(mc_root_base, f"urdf_{urdf_version}", f"overlay_{overlay_tag}")
+
+        if len(other_args) > 0:
+            mc_root = os.path.join(mc_root, *other_args)
+
         json_dir = os.path.join(logging_dir, mc_root, "json")
         video_dir = os.path.join(logging_dir, mc_root, "video")
         os.makedirs(json_dir, exist_ok=True)
