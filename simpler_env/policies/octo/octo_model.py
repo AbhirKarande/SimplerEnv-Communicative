@@ -299,7 +299,7 @@ class BatchedOctoInference(OctoInference):
         self.rng, key = jax.random.split(self.rng)
 
         # Perform batched inference in a single call using sample_shape
-        norm_raw_actions_batch, _ = self.model.sample_actions(
+        norm_raw_actions_batch = self.model.sample_actions(
             input_observation,
             self.task,
             rng=key,
