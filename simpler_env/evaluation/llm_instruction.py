@@ -18,8 +18,12 @@ If available, a goal/overlay image for visual matching is also included below.
 
 Constraints:
 - One concise imperative sentence.
+- The sentence MUST explicitly state the high-level task action appropriate for '{task_name}':
+  - If the task is a move-near task, begin with "Move ... near ..." specifying the two relevant objects.
+  - If the task is to pick the coke can, begin with "Pick up the coke can" (include approach/orientation detail as needed).
+  - If the task is to close a drawer, begin with "Close the drawer" (include approach/orientation detail as needed).
+- Use object names from the initial instruction when available.
 - Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
-- Incorporate the context of the task. (i.e. if the task is to pick up a coke can, the instruction should include something about picking up the coke can)
 - Do not ask questions. Output only the instruction.
 
 Refined Instruction:
@@ -40,7 +44,11 @@ If available, a goal/overlay image for visual matching is also included below.
 
 Constraints:
 - One concise imperative sentence.
-- Incorporate the context of the task. (i.e. if the task is to pick up a coke can, the instruction should include something about picking up the coke can)
+- The sentence MUST explicitly state the high-level task action appropriate for '{task_name}':
+  - If the task is a move-near task, begin with "Move ... near ..." specifying the two relevant objects.
+  - If the task is to pick the coke can, begin with "Pick up the coke can" (and any necessary approach/position/orientation detail).
+  - If the task is to close a drawer, begin with "Close the drawer" (and any necessary approach/position/orientation detail).
+- Use object names from the initial instruction when available.
 - Do not ask questions. Output only the instruction.
 
 Refined Instruction:
