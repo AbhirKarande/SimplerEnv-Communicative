@@ -2,6 +2,20 @@
 
 gpu_id=0
 
+# Set a logging directory (prefer persistent HPC scratch if available)
+if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
+LOG_ROOT="/scratch1/$USER"
+elif [ -n "${SCRATCH:-}" ] && [ -d "${SCRATCH:-}" ] && [ -w "${SCRATCH:-}" ]; then
+LOG_ROOT="${SCRATCH}"
+else
+LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
+fi
+LOG_DIR="$LOG_ROOT/simpler_env_results"
+mkdir -p "$LOG_DIR" 2>/dev/null || true
+
+# Unique run identifier to avoid overwriting previous results
+run_id=$(date +"%Y%m%d_%H%M%S")
+
 declare -a policy_models=(
   "octo-base"
   # "octo-small"
@@ -27,14 +41,23 @@ do for policy_model in "${policy_models[@]}";
 
 do for coke_can_option in "${coke_can_options_arr[@]}";
 
-do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
+do \
+  # Derive hierarchical logging dir per combination
+  option_dir=${coke_can_option//=/__}
+  urdf_dir=${urdf_version}
+  logging_dir=${LOG_DIR}/${run_id}/octo_pick_coke_can/${policy_model}/${option_dir}/urdf_${urdf_dir}
+
+  echo "Logging to ${logging_dir}"
+
+  CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path None \
   --robot google_robot_static  --policy-setup google_robot \
   --control-freq 3 --sim-freq 501 --max-episode-steps 80 \
   --env-name ${env_name} --scene-name ${scene_name} \
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x 0.35 0.35 1 --robot-init-y 0.20 0.20 1 --obj-init-x -0.35 -0.12 5 --obj-init-y -0.02 0.42 5 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
-  --additional-env-build-kwargs ${coke_can_option} urdf_version=${urdf_version};
+  --additional-env-build-kwargs ${coke_can_option} urdf_version=${urdf_version} \
+  --logging-dir ${logging_dir};
 
 done
 
