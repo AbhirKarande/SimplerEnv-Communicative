@@ -459,7 +459,7 @@ def run_maniskill2_eval_single_episode(
         other_args = []
         try:
             if isinstance(additional_env_build_kwargs, dict):
-                for k, v in additional_env_build_kwargs.values():
+                for k, v in additional_env_build_kwargs.items():
                     if k != "urdf_version":
                         other_args.append(f"{k}_{v}")
         except Exception:
