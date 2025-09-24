@@ -75,10 +75,10 @@ def process_images(frame_images):
 def send_request(
     prompt_text,
     image_content=[],
-    model="meta-llama/llama-4-maverick-17b-128e-instruct",
-    api_endpoint="https://api.groq.com/openai/v1/chat/completions",
+    model="gemini-2.0-flash",
+    api_endpoint="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
     api_key=None,
-    delay=20,
+    delay=1,
 ):
     """
     Sends an API request with the given prompt.
@@ -86,7 +86,7 @@ def send_request(
     """
     if not api_key:
         # Get API key from env var if it isn't passed to this function
-        api_key = os.environ.get("GROQ_API_KEY", "")
+        api_key = os.environ.get("API_KEY", "")
 
     if api_key == "":
         return None

@@ -39,7 +39,7 @@ class InstructionRefiner:
         self.goal_image_path = goal_image_path
 
         self._eps = 1e-8
-        self._consec_needed = 1 if procedure == 1 else 1
+        self._consec_needed = 3 if procedure == 1 else 5
         self._consec_counter = 0
 
         # Preload distributions
@@ -253,5 +253,3 @@ class InstructionRefiner:
                 return current_instruction, False
 
         return current_instruction, False
-
-
