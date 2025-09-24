@@ -49,7 +49,7 @@ def send_request(
     model="meta-llama/llama-4-maverick-17b-128e-instruct",
     api_endpoint="https://api.groq.com/openai/v1/chat/completions",
     api_key=None,
-    delay=15,
+    delay=5,
 ):
     """
     Sends an API request with the given prompt.
