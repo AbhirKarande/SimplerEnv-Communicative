@@ -54,6 +54,34 @@ Constraints:
 Refined Instruction:
 """
 
+prompt_template_proc3 = """
+You are a robotics expert providing refined instructions to an AI robot model ({model_type}).
+The robot is performing a task called '{task_name}' which is about {task_context}.
+The initial instruction was: "{initial_instruction}".
+It is currently at timestep {current_timestep}.
+
+The model's actions suggest uncertainty and the predicted outcome is failure. 
+You must provide a refined prompt that helps prevent the failure. 
+In this prompt, encourage the model to take more radical actions and take larger steps. 
+Keep it short and immediately actionable.
+
+Here is the last frame from the robot's camera:
+
+If available, a goal/overlay image for visual matching is also included below.
+
+Constraints:
+- One concise imperative sentence.
+- The sentence MUST explicitly state the high-level task action appropriate for '{task_name}':
+  - If the task is a move-near task, begin with "Move ... near ..." specifying the two relevant objects.
+  - If the task is to pick the coke can, begin with "Pick up the coke can" (include approach/orientation detail as needed).
+  - If the task is to close a drawer, begin with "Close the drawer" (include approach/orientation detail as needed).
+- Use object names from the initial instruction when available.
+- Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
+- Do not ask questions. Output only the instruction.
+
+Refined Instruction:
+"""
+
 
 def encode_image(image_path):
     """
@@ -130,7 +158,13 @@ def generate_instruction(
     """
     Generate new instruction using LLM
     """
-    tmpl = prompt_template_proc1 if int(procedure) == 1 else prompt_template_proc2
+    
+    if int(procedure) == 1: 
+        tmpl = prompt_template_proc1
+    else if int(procedure) == 2:
+        tmpl = prompt_template_proc2
+    else:
+        tmpl = prompt_template_proc3
     prompt = tmpl.format(
         model_type=model_type,
         task_name=task_name,
