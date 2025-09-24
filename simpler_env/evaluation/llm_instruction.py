@@ -9,10 +9,8 @@ The robot is performing a task called '{task_name}' which is about {task_context
 The initial instruction was: "{initial_instruction}".
 It is currently at timestep {current_timestep}.
 
-The model's actions suggest uncertainty and the predicted outcome is failure. 
-You must provide a refined prompt that helps prevent the failure. 
-In this prompt, encourage the model to take more radical actions and take larger steps. 
-Keep it short and immediately actionable.
+We are using Procedure 1: orientation-focused refinement. The model's actions suggest uncertainty specifically in orientation (rotation) dimensions: {action_dim}.
+Provide a refined, orientation-specific command that helps adjust the gripper's orientation to make progress. Keep it short and immediately actionable.
 
 Here is the last frame from the robot's camera:
 
