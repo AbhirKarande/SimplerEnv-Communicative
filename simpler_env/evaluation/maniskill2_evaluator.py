@@ -3,6 +3,7 @@ Evaluate a model on ManiSkill2 environment.
 """
 
 import os
+import json
 
 import numpy as np
 from transforms3d.euler import quat2euler
@@ -35,6 +36,7 @@ def run_maniskill2_eval_single_episode(
     enable_raytracing=False,
     additional_env_save_tags=None,
     logging_dir="./results",
+    episode_index=None,
 ):
 
     if additional_env_build_kwargs is None:
@@ -98,6 +100,7 @@ def run_maniskill2_eval_single_episode(
     image = get_image_from_maniskill2_obs_dict(env, obs, camera_name=obs_camera_name)
     images = [image]
     predicted_actions = []
+    processed_actions = []
     predicted_terminated, done, truncated = False, False, False
 
     # Initialize model
@@ -111,6 +114,21 @@ def run_maniskill2_eval_single_episode(
         # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
         raw_action, action = model.step(image, task_description)
         predicted_actions.append(raw_action)
+        # collect processed action fields for JSON
+        world_vec = np.asarray(action["world_vector"]).tolist()
+        rot_ax = np.asarray(action["rot_axangle"]).tolist()
+        gripper = np.asarray(action["gripper"]).tolist()
+        term_val = float(np.asarray(action.get("terminate_episode", [0]))[0])
+        processed_vec = np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]).tolist()
+        processed_actions.append(
+            {
+                "world_vector": world_vec,
+                "rot_axangle": rot_ax,
+                "gripper": gripper,
+                "terminate_episode": term_val,
+                "processed_vector": processed_vec,
+            }
+        )
         predicted_terminated = bool(action["terminate_episode"][0] > 0)
         if predicted_terminated:
             if not is_final_subtask:
@@ -169,12 +187,41 @@ def run_maniskill2_eval_single_episode(
     action_path = action_root + os.path.basename(action_path)
     model.visualize_epoch(predicted_actions, images, save_path=action_path)
 
+    # save raw and processed actions as JSON alongside video
+    def to_serializable(obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if isinstance(obj, (np.floating, np.integer)):
+            return obj.item()
+        if isinstance(obj, (list, tuple)):
+            return [to_serializable(o) for o in obj]
+        if isinstance(obj, dict):
+            return {k: to_serializable(v) for k, v in obj.items()}
+        return obj
+
+    json_root = os.path.dirname(video_path) + "/actions_json/"
+    os.makedirs(json_root, exist_ok=True)
+    idx = int(episode_index) if episode_index is not None else 0
+    json_name = f"{'True' if success == 'success' else 'False'}_{idx}.json"
+    json_path = os.path.join(json_root, json_name)
+    with open(json_path, "w") as f:
+        json.dump(
+            {
+                "success": success == "success",
+                "episode_index": idx,
+                "raw_actions": [to_serializable(a) for a in predicted_actions],
+                "actions": processed_actions,
+            },
+            f,
+        )
+
     return success == "success"
 
 
 def maniskill2_evaluator(model, args):
     control_mode = get_robot_control_mode(args.robot, args.policy_model)
     success_arr = []
+    episode_idx = 0
 
     # run inference
     for robot_init_x in args.robot_init_xs:
@@ -203,16 +250,23 @@ def maniskill2_evaluator(model, args):
                 if args.obj_variation_mode == "xy":
                     for obj_init_x in args.obj_init_xs:
                         for obj_init_y in args.obj_init_ys:
-                            success_arr.append(
-                                run_maniskill2_eval_single_episode(
-                                    obj_init_x=obj_init_x,
-                                    obj_init_y=obj_init_y,
-                                    **kwargs,
-                                )
+                            ok = run_maniskill2_eval_single_episode(
+                                obj_init_x=obj_init_x,
+                                obj_init_y=obj_init_y,
+                                episode_index=episode_idx,
+                                **kwargs,
                             )
+                            success_arr.append(ok)
+                            episode_idx += 1
                 elif args.obj_variation_mode == "episode":
                     for obj_episode_id in range(args.obj_episode_range[0], args.obj_episode_range[1]):
-                        success_arr.append(run_maniskill2_eval_single_episode(obj_episode_id=obj_episode_id, **kwargs))
+                        ok = run_maniskill2_eval_single_episode(
+                            obj_episode_id=obj_episode_id,
+                            episode_index=episode_idx,
+                            **kwargs,
+                        )
+                        success_arr.append(ok)
+                        episode_idx += 1
                 else:
                     raise NotImplementedError()
 
