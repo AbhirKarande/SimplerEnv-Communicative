@@ -17,9 +17,10 @@ Here is the last frame from the robot's camera:
 Constraints:
 - One concise imperative sentence.
 - Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
+- Incorporate the context of the task. (i.e. if the task is to pick up a coke can, the instruction should include something about picking up the coke can)
 - Do not ask questions. Output only the instruction.
 
-Example: "rotate the gripper slightly clockwise around the vertical axis to align with the handle."
+Example: "rotate the gripper slightly clockwise around the vertical axis to align with coke can and pick it up."
 
 Refined Instruction:
 """
@@ -38,9 +39,10 @@ Here is the last frame from the robot's camera:
 Constraints:
 - One concise imperative sentence.
 - Focus on a single next step (e.g., nudge position, adjust angle, approach object).
+- Incorporate the context of the task. (i.e. if the task is to pick up a coke can, the instruction should include something about picking up the coke can)
 - Do not ask questions. Output only the instruction.
 
-Example: "move the gripper forward and slightly down toward the drawer handle."
+Example: "move the gripper forward and slightly down toward the middle drawer and close it."
 
 Refined Instruction:
 """
