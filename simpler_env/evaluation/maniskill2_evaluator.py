@@ -155,6 +155,7 @@ def run_maniskill2_eval_single_episode(
             logging_dir=logging_dir,
             model_type=str(getattr(model, "policy_setup", "google_robot")),
             task_name=task_name_for_llm,
+            goal_image_path=rgb_overlay_path,
         )
 
     # Whether to honor env-provided instruction updates

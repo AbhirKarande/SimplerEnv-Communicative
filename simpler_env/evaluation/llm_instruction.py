@@ -14,6 +14,8 @@ Provide a refined, orientation-specific command that helps adjust the gripper's 
 
 Here is the last frame from the robot's camera:
 
+If available, a goal/overlay image for visual matching is also included below.
+
 Constraints:
 - One concise imperative sentence.
 - Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
@@ -33,6 +35,8 @@ We are using Procedure 2: position-orientation refinement. The model's actions s
 Provide a refined command targeting position (x,y,z), orientation (roll,pitch,yaw), or both, choosing whichever is most immediately helpful. Keep it short and directly actionable.
 
 Here is the last frame from the robot's camera:
+
+If available, a goal/overlay image for visual matching is also included below.
 
 Constraints:
 - One concise imperative sentence.
@@ -113,6 +117,7 @@ def generate_instruction(
     task_context="a robotic manipulation task",
     api_key=None,
     procedure: int = 1,
+    goal_image_path: str | None = None,
 ):
     """
     Generate new instruction using LLM
@@ -130,6 +135,13 @@ def generate_instruction(
     image_content = []
     if frame_images:
         image_content = process_images(frame_images)
+    # Optionally include a goal/overlay image (e.g., from rgb_overlay_path)
+    if goal_image_path is not None:
+        try:
+            base64_goal = encode_image(goal_image_path)
+            image_content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_goal}"}})
+        except Exception:
+            pass
 
     response = send_request(prompt, image_content, api_key=api_key)
     if response is None:
