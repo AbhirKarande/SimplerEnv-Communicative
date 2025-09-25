@@ -29,8 +29,6 @@ class InstructionRefiner:
         task_name: str,
         goal_image_path: Optional[str] = None,
     ) -> None:
-        assert task_kind in ("pick_coke_can", "close_drawer")
-        assert procedure in (1, 2)
         self.task_kind = task_kind
         self.procedure = procedure
         self.logging_dir = logging_dir
