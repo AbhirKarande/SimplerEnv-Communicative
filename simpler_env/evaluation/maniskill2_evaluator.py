@@ -586,36 +586,20 @@ import numpy as np
 
 def mask_actions_from_csv(csv_path, actions, timestep):
     """
-    Mask actions based on success/failure statistics from CSV.
-
-    Parameters
-    ----------
-    csv_path : str
-        Path to CSV containing success/failure mean and std values per timestep.
-    actions : np.ndarray
-        Shape (7,) action vector (order: x, y, z, rot_x, rot_y, rot_z, open_gripper).
-    timestep : int
-        The timestep for which to extract success/failure statistics.
-
-    Returns
-    -------
-    np.ndarray
-        Masked action vector with certain dimensions set to 0.0.
+    Mask actions based on success/failure statistics from CSV with debug prints.
     """
 
     dims = ["world_x", "world_y", "world_z",
             "rot_x", "rot_y", "rot_z", "open_gripper"]
 
-    success_rows = []
-    failure_rows = []
+    success_rows, failure_rows = [], []
 
     # Read CSV
-    with open(csv_path, "r", newline="") as f:
+    with open(csv_path, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             if int(row["timestep"]) != timestep:
                 continue
-
             if int(row["success"]) == 1:
                 success_rows.append(row)
             else:
@@ -624,29 +608,35 @@ def mask_actions_from_csv(csv_path, actions, timestep):
     if not success_rows or not failure_rows:
         raise ValueError(f"Missing success or failure stats for timestep {timestep}")
 
-    # Helper to extract stats in correct order
+    # Helper to extract per-dim mean
     def extract_stats(rows, stat_type):
         arr = []
         for d in dims:
             vals = [float(r[f"{d}_{stat_type}"]) for r in rows]
             arr.append(np.mean(vals))
-        return np.array(arr, dtype=float)
+        return np.array(arr, dtype=np.float64)
 
     success_mean = extract_stats(success_rows, "mean")
     success_std  = extract_stats(success_rows, "std")
     failure_mean = extract_stats(failure_rows, "mean")
     failure_std  = extract_stats(failure_rows, "std")
-    print(f"timestep:{timestep}")
-    print(f"success_mean:{success_mean}")
-    print(f"failure_mean:{failure_mean}")
-    print(f"success_std:{success_std}")
-    print(f"failure_std:{failure_std}")
-    # Avoid div by zero
+
+    # Print debug info
+    print(f"=== timestep {timestep} ===")
+    print("success_mean:", success_mean)
+    print("success_std :", success_std)
+    print("failure_mean:", failure_mean)
+    print("failure_std :", failure_std)
+
+    # Avoid division by zero
     eps = 1e-8
     success_std = np.maximum(success_std, eps)
     failure_std = np.maximum(failure_std, eps)
 
-    # Mahalanobis distances (per-dim, diagonal covariance assumption)
+    # Ensure actions is a float array
+    actions = np.asarray(actions, dtype=np.float64)
+
+    # Mahalanobis distance per dimension
     Ds = np.abs(actions - success_mean) / success_std
     Df = np.abs(actions - failure_mean) / failure_std
 
@@ -654,7 +644,7 @@ def mask_actions_from_csv(csv_path, actions, timestep):
     masked_actions = np.where(Ds > Df, 0.0, actions)
 
     if np.any(masked_actions == 0.0):
-        print(f"actions:{actions}")
-        print(f"masked_actions:{masked_actions}")
+        print("Original actions :", actions)
+        print("Masked actions   :", masked_actions)
 
     return masked_actions
