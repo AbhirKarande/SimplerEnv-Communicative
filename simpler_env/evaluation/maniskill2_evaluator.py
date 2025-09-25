@@ -581,13 +581,11 @@ def maniskill2_evaluator(model, args):
 
     return success_arr
 
-
 import numpy as np
-import pandas as pd
 
 def mask_actions_from_csv(csv_path, actions, timestep):
     """
-    Mask actions based on success/failure statistics from CSV.
+    Mask actions based on success/failure statistics from CSV (NumPy only).
 
     Parameters
     ----------
@@ -604,50 +602,40 @@ def mask_actions_from_csv(csv_path, actions, timestep):
         Masked action vector with certain dimensions set to 0.0.
     """
 
-    # Fixed order of dimensions
+    # Dimension order
     dims = ["world_x", "world_y", "world_z", 
             "rot_x", "rot_y", "rot_z", "open_gripper"]
 
-    df = pd.read_csv(csv_path)
+    # Load CSV (with header)
+    data = np.genfromtxt(csv_path, delimiter=",", names=True, dtype=float)
 
-    # Filter by timestep
-    df_t = df[df['timestep'] == timestep]
-    if df_t.empty:
+    # Filter rows for given timestep
+    rows_t = data[data["timestep"] == timestep]
+    if rows_t.size == 0:
         raise ValueError(f"No data found for timestep {timestep}")
 
-    # Split groups
-    df_success = df_t[df_t['success'] == 1]
-    df_failure = df_t[df_t['success'] == 0]
-    if df_success.empty or df_failure.empty:
+    # Split success vs failure
+    rows_success = rows_t[rows_t["success"] == 1]
+    rows_failure = rows_t[rows_t["success"] == 0]
+    if rows_success.size == 0 or rows_failure.size == 0:
         raise ValueError(f"Missing success or failure stats for timestep {timestep}")
 
-    # Extract in strict order
-    success_mean = df_success[[f"{d}_mean" for d in dims]].mean().to_numpy()
-    success_std  = df_success[[f"{d}_std" for d in dims]].mean().to_numpy()
-
-    failure_mean = df_failure[[f"{d}_mean" for d in dims]].mean().to_numpy()
-    failure_std  = df_failure[[f"{d}_std" for d in dims]].mean().to_numpy()
-
-    print(f"timestep:{timestep}")
-    print(f"success_mean:{success_mean}")
-    print(f"failure_mean:{failure_mean}")
-    print(f"success_std:{success_std}")
-    print(f"failure_std:{failure_std}")
+    # Collect stats in strict order
+    success_mean = np.array([rows_success[f"{d}_mean"].mean() for d in dims])
+    success_std  = np.array([rows_success[f"{d}_std"].mean()  for d in dims])
+    failure_mean = np.array([rows_failure[f"{d}_mean"].mean() for d in dims])
+    failure_std  = np.array([rows_failure[f"{d}_std"].mean()  for d in dims])
 
     # Avoid div by zero
     eps = 1e-8
     success_std = np.maximum(success_std, eps)
     failure_std = np.maximum(failure_std, eps)
 
-    # Mahalanobis distance (per dimension, diagonal cov assumption)
+    # Mahalanobis distances per dimension
     Ds = np.abs(actions - success_mean) / success_std
     Df = np.abs(actions - failure_mean) / failure_std
 
-    # Mask: if closer to failure, zero out
+    # Masking: if Ds > Df → freeze (set 0)
     masked_actions = np.where(Ds > Df, 0.0, actions)
-
-    if np.any(masked_actions == 0.0):
-        print(f"actions:{actions}")
-        print(f"masked_actions:{masked_actions}")
 
     return masked_actions
