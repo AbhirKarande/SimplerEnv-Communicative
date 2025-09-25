@@ -233,6 +233,9 @@ class InstructionRefiner:
         """
         Returns (instruction, did_refine)
         """
+        # If procedure is 0, LLM refinement is disabled; only action masking is used upstream
+        if self.procedure == 0:
+            return current_instruction, False
         try:
             action_world_vec = np.asarray(raw_action["world_vector"], dtype=np.float64)
             action_rot_euler = np.asarray(raw_action["rotation_delta"], dtype=np.float64)
