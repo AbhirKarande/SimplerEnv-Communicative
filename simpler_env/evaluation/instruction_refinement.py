@@ -171,6 +171,36 @@ class InstructionRefiner:
 
         return Ds_pos, Ds_rot, Df_pos, Df_rot
 
+    def action_masking(self, raw_action: dict, timestep: int) -> dict:
+        """
+        Freeze per-dimension action deltas where Ds > Df by setting that delta to 0 for
+        the current timestep. Applies independently to world_vector (x,y,z) and
+        rotation_delta (r,p,y).
+        Returns a modified copy of raw_action.
+        """
+        try:
+            action_world_vec = np.asarray(raw_action.get("world_vector", [0.0, 0.0, 0.0]), dtype=np.float64)
+            action_rot_euler = np.asarray(raw_action.get("rotation_delta", [0.0, 0.0, 0.0]), dtype=np.float64)
+        except Exception:
+            return raw_action
+
+        Ds_pos, Ds_rot, Df_pos, Df_rot = self._compute_distances(timestep, action_world_vec, action_rot_euler)
+
+        masked_world = action_world_vec.copy()
+        masked_rot = action_rot_euler.copy()
+
+        # Freeze any dimension where success is farther than failure (Ds > Df)
+        for i in range(3):
+            if Ds_pos[i] > Df_pos[i]:
+                masked_world[i] = 0.0
+            if Ds_rot[i] > Df_rot[i]:
+                masked_rot[i] = 0.0
+
+        new_raw = dict(raw_action)
+        new_raw["world_vector"] = masked_world
+        new_raw["rotation_delta"] = masked_rot
+        return new_raw
+
     def _write_frame(self, image_np: np.ndarray, timestep: int) -> Optional[str]:
         if not TRY_INCLUDE_IMAGE:
             return None
