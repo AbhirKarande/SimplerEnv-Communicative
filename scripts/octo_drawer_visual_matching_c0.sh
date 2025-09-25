@@ -163,7 +163,7 @@ python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path 
 #   --rgb-overlay-path ./ManiSkill2_real2sim/data/real_inpainting/open_drawer_c2.png \
 #   ${EXTRA_ARGS} \
 #   --logging-dir ${logging_dir}
-# }
+}
 
 
 for policy_model in "${policy_models[@]}"; do
