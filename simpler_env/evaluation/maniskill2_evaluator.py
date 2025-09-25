@@ -67,7 +67,7 @@ def run_maniskill2_eval_single_episode(
 
     if additional_env_build_kwargs is None:
         additional_env_build_kwargs = {}
-
+    task_kind = ""
     # Create environment
     kwargs = dict(
         obs_mode="rgbd",
@@ -358,9 +358,16 @@ def run_maniskill2_eval_single_episode(
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
                 }
                 trajectory.append(timestep_log)
-
+            csv_path=""
+            here = os.path.dirname(__file__)
+            if task_kind == "pick_coke_can":
+                csv_path = os.path.join(here, "pick_coke_can_distribution.csv")
+            else:
+                csv_path = os.path.join(here, "close_drawer_distribution.csv")
+            action_full=[action["world_vector"], action["rot_axangle"], action["gripper"]]
+            action_full_masked = mask_actions_from_csv(csv_path, action_full, timestep)
             obs, reward, done, truncated, info = env.step(
-                np.concatenate([action["world_vector"], action["rot_axangle"], action["gripper"]]),
+                action_full_masked,
             )
         else:
             # step the model; "raw_action" is raw model action output; "action" is the processed action to be sent into maniskill env
@@ -573,3 +580,74 @@ def maniskill2_evaluator(model, args):
                     raise NotImplementedError()
 
     return success_arr
+
+
+import numpy as np
+import pandas as pd
+
+def mask_actions_from_csv(csv_path, actions, timestep):
+    """
+    Mask actions based on success/failure statistics from CSV.
+
+    Parameters
+    ----------
+    csv_path : str
+        Path to CSV containing success/failure mean and std values per timestep.
+    actions : np.ndarray
+        Shape (7,) action vector (order: x, y, z, rot_x, rot_y, rot_z, open_gripper).
+    timestep : int
+        The timestep for which to extract success/failure statistics.
+
+    Returns
+    -------
+    np.ndarray
+        Masked action vector with certain dimensions set to 0.0.
+    """
+
+    # Fixed order of dimensions
+    dims = ["world_x", "world_y", "world_z", 
+            "rot_x", "rot_y", "rot_z", "open_gripper"]
+
+    df = pd.read_csv(csv_path)
+
+    # Filter by timestep
+    df_t = df[df['timestep'] == timestep]
+    if df_t.empty:
+        raise ValueError(f"No data found for timestep {timestep}")
+
+    # Split groups
+    df_success = df_t[df_t['success'] == 1]
+    df_failure = df_t[df_t['success'] == 0]
+    if df_success.empty or df_failure.empty:
+        raise ValueError(f"Missing success or failure stats for timestep {timestep}")
+
+    # Extract in strict order
+    success_mean = df_success[[f"{d}_mean" for d in dims]].mean().to_numpy()
+    success_std  = df_success[[f"{d}_std" for d in dims]].mean().to_numpy()
+
+    failure_mean = df_failure[[f"{d}_mean" for d in dims]].mean().to_numpy()
+    failure_std  = df_failure[[f"{d}_std" for d in dims]].mean().to_numpy()
+
+    print(f"timestep:{timestep}")
+    print(f"success_mean:{success_mean}")
+    print(f"failure_mean:{failure_mean}")
+    print(f"success_std:{success_std}")
+    print(f"failure_std:{failure_std}")
+
+    # Avoid div by zero
+    eps = 1e-8
+    success_std = np.maximum(success_std, eps)
+    failure_std = np.maximum(failure_std, eps)
+
+    # Mahalanobis distance (per dimension, diagonal cov assumption)
+    Ds = np.abs(actions - success_mean) / success_std
+    Df = np.abs(actions - failure_mean) / failure_std
+
+    # Mask: if closer to failure, zero out
+    masked_actions = np.where(Ds > Df, 0.0, actions)
+
+    if np.any(masked_actions == 0.0):
+        print(f"actions:{actions}")
+        print(f"masked_actions:{masked_actions}")
+
+    return masked_actions
