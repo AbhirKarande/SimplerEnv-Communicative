@@ -30,7 +30,7 @@ declare -a policy_models=(
 declare -a coke_can_options_arr=("lr_switch=True" "upright=True" "laid_vertically=True")
 
 # URDF variations
-declare -a urdf_version_arr=(None "recolor_tabletop_visual_matching_1" "recolor_tabletop_visual_matching_2" "recolor_cabinet_visual_matching_1")
+declare -a urdf_version_arr=("recolor_tabletop_visual_matching_1")
 
 env_name=GraspSingleOpenedCokeCanInScene-v0
 scene_name=google_pick_coke_can_1_v4
