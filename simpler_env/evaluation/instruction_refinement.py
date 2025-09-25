@@ -67,6 +67,8 @@ class InstructionRefiner:
         here = os.path.dirname(__file__)
         if task_kind == "pick_coke_can":
             return os.path.join(here, "pick_coke_can_distribution.csv")
+        elif task_kind == "move_near":
+            return os.path.join(here, "move_near_distribution.csv")
         else:
             return os.path.join(here, "close_drawer_distribution.csv")
 
