@@ -171,9 +171,8 @@ class InstructionRefiner:
 
     def action_masking(self, raw_action: dict, timestep: int) -> dict:
         """
-        Freeze per-dimension action deltas where Ds > Df by setting that delta to 0 for
-        the current timestep. Applies independently to world_vector (x,y,z) and
-        rotation_delta (r,p,y).
+        Freeze only the dimension with the highest Ds/Df ratio if Ds > Df.
+        Applies independently to world_vector (x,y,z) and rotation_delta (r,p,y).
         Returns a modified copy of raw_action.
         """
         try:
@@ -182,30 +181,28 @@ class InstructionRefiner:
         except Exception:
             return raw_action
 
-        Ds_pos, Ds_rot, Df_pos, Df_rot = self._compute_distances(timestep, action_world_vec, action_rot_euler)
+        Ds_pos, Ds_rot, Df_pos, Df_rot = self._compute_distances(
+            timestep, action_world_vec, action_rot_euler
+        )
 
         masked_world = action_world_vec.copy()
         masked_rot = action_rot_euler.copy()
-        masked_pos_names = []
-        masked_rot_names = []
 
-        # Freeze any dimension where success is farther than failure (Ds > Df)
-        for i in range(3):
-            if Ds_pos[i] > Df_pos[i]:
-                masked_world[i] = 0.0
-                masked_pos_names.append(self.pos_dim_names[i])
-            if Ds_rot[i] > Df_rot[i]:
-                masked_rot[i] = 0.0
-                masked_rot_names.append(self.rot_dim_names[i])
+        eps = 1e-8  # to avoid div-by-zero
 
-        if masked_pos_names or masked_rot_names:
-            try:
-                pos_str = ",".join(masked_pos_names) if masked_pos_names else "-"
-                rot_str = ",".join(masked_rot_names) if masked_rot_names else "-"
-                print(f"[ActionMask] t={timestep} masked pos:[{pos_str}] rot:[{rot_str}]")
-            except Exception:
-                pass
+        # ---- World vector (x,y,z) ----
+        ratios_pos = Ds_pos / (Df_pos + eps)
+        max_idx_pos = np.argmax(ratios_pos)
+        if Ds_pos[max_idx_pos] > Df_pos[max_idx_pos]:
+            masked_world[max_idx_pos] = 0.0
 
+        # ---- Rotation deltas (r,p,y) ----
+        ratios_rot = Ds_rot / (Df_rot + eps)
+        max_idx_rot = np.argmax(ratios_rot)
+        if Ds_rot[max_idx_rot] > Df_rot[max_idx_rot]:
+            masked_rot[max_idx_rot] = 0.0
+
+        # Build new dict
         new_raw = dict(raw_action)
         new_raw["world_vector"] = masked_world
         new_raw["rotation_delta"] = masked_rot
