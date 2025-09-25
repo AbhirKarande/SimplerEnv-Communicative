@@ -636,7 +636,11 @@ def mask_actions_from_csv(csv_path, actions, timestep):
     success_std  = extract_stats(success_rows, "std")
     failure_mean = extract_stats(failure_rows, "mean")
     failure_std  = extract_stats(failure_rows, "std")
-
+    print(f"timestep:{timestep}")
+    print(f"success_mean:{success_mean}")
+    print(f"failure_mean:{failure_mean}")
+    print(f"success_std:{success_std}")
+    print(f"failure_std:{failure_std}")
     # Avoid div by zero
     eps = 1e-8
     success_std = np.maximum(success_std, eps)
@@ -648,5 +652,9 @@ def mask_actions_from_csv(csv_path, actions, timestep):
 
     # Masking
     masked_actions = np.where(Ds > Df, 0.0, actions)
+
+    if np.any(masked_actions == 0.0):
+        print(f"actions:{actions}")
+        print(f"masked_actions:{masked_actions}")
 
     return masked_actions
