@@ -20,7 +20,7 @@ SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-1}
 
 # Instruction refinement controls
 # INSTR_PROC: 0 = disabled, 1 = Procedure 1, 2 = Procedure 2
-INSTR_PROC=${INSTR_PROC:-1}
+INSTR_PROC=${INSTR_PROC:-2}
 # INSTR_TASK: auto | pick_coke_can | close_drawer
 INSTR_TASK=${INSTR_TASK:-auto}
 

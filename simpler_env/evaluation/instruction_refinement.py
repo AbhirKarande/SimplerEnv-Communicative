@@ -37,7 +37,7 @@ class InstructionRefiner:
         self.goal_image_path = goal_image_path
 
         self._eps = 1e-8
-        self._consec_needed = 3
+        self._consec_needed = 5
         self._consec_counter = 0
 
         # Preload distributions
