@@ -188,13 +188,25 @@ class InstructionRefiner:
 
         masked_world = action_world_vec.copy()
         masked_rot = action_rot_euler.copy()
+        masked_pos_names = []
+        masked_rot_names = []
 
         # Freeze any dimension where success is farther than failure (Ds > Df)
         for i in range(3):
             if Ds_pos[i] > Df_pos[i]:
                 masked_world[i] = 0.0
+                masked_pos_names.append(self.pos_dim_names[i])
             if Ds_rot[i] > Df_rot[i]:
                 masked_rot[i] = 0.0
+                masked_rot_names.append(self.rot_dim_names[i])
+
+        if masked_pos_names or masked_rot_names:
+            try:
+                pos_str = ",".join(masked_pos_names) if masked_pos_names else "-"
+                rot_str = ",".join(masked_rot_names) if masked_rot_names else "-"
+                print(f"[ActionMask] t={timestep} masked pos:[{pos_str}] rot:[{rot_str}]")
+            except Exception:
+                pass
 
         new_raw = dict(raw_action)
         new_raw["world_vector"] = masked_world
