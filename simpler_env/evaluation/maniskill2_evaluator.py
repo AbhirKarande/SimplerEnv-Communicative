@@ -606,7 +606,7 @@ def mask_actions_from_csv(csv_path, actions, timestep):
     dims = ["world_x", "world_y", "world_z", 
             "rot_x", "rot_y", "rot_z", "open_gripper"]
 
-    # Load CSV (with header)
+    # Load CSV with named columns
     data = np.genfromtxt(csv_path, delimiter=",", names=True, dtype=float)
 
     # Filter rows for given timestep
@@ -614,28 +614,28 @@ def mask_actions_from_csv(csv_path, actions, timestep):
     if rows_t.size == 0:
         raise ValueError(f"No data found for timestep {timestep}")
 
-    # Split success vs failure
+    # Split success/failure
     rows_success = rows_t[rows_t["success"] == 1]
     rows_failure = rows_t[rows_t["success"] == 0]
     if rows_success.size == 0 or rows_failure.size == 0:
         raise ValueError(f"Missing success or failure stats for timestep {timestep}")
 
-    # Collect stats in strict order
-    success_mean = np.array([rows_success[f"{d}_mean"].mean() for d in dims])
-    success_std  = np.array([rows_success[f"{d}_std"].mean()  for d in dims])
-    failure_mean = np.array([rows_failure[f"{d}_mean"].mean() for d in dims])
-    failure_std  = np.array([rows_failure[f"{d}_std"].mean()  for d in dims])
+    # Force float conversion when aggregating
+    success_mean = np.array([float(np.mean(rows_success[f"{d}_mean"])) for d in dims], dtype=float)
+    success_std  = np.array([float(np.mean(rows_success[f"{d}_std"]))  for d in dims], dtype=float)
+    failure_mean = np.array([float(np.mean(rows_failure[f"{d}_mean"])) for d in dims], dtype=float)
+    failure_std  = np.array([float(np.mean(rows_failure[f"{d}_std"]))  for d in dims], dtype=float)
 
     # Avoid div by zero
     eps = 1e-8
     success_std = np.maximum(success_std, eps)
     failure_std = np.maximum(failure_std, eps)
 
-    # Mahalanobis distances per dimension
+    # Mahalanobis distances (per dim, diagonal cov)
     Ds = np.abs(actions - success_mean) / success_std
     Df = np.abs(actions - failure_mean) / failure_std
 
-    # Masking: if Ds > Df → freeze (set 0)
+    # Masking
     masked_actions = np.where(Ds > Df, 0.0, actions)
 
     return masked_actions
