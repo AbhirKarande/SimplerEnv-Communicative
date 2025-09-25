@@ -582,10 +582,11 @@ def maniskill2_evaluator(model, args):
     return success_arr
 
 import numpy as np
+import pandas as pd
 
 def mask_actions_from_csv(csv_path, actions, timestep):
     """
-    Mask actions based on success/failure statistics from CSV (NumPy only).
+    Mask actions based on success/failure statistics from CSV.
 
     Parameters
     ----------
@@ -602,40 +603,40 @@ def mask_actions_from_csv(csv_path, actions, timestep):
         Masked action vector with certain dimensions set to 0.0.
     """
 
-    # Dimension order
+    # Fixed order of dimensions
     dims = ["world_x", "world_y", "world_z", 
             "rot_x", "rot_y", "rot_z", "open_gripper"]
 
-    # Load CSV with named columns
-    data = np.genfromtxt(csv_path, delimiter=",", names=True, dtype=float)
+    df = pd.read_csv(csv_path)
 
-    # Filter rows for given timestep
-    rows_t = data[data["timestep"] == timestep]
-    if rows_t.size == 0:
+    # Filter by timestep
+    df_t = df[df['timestep'] == timestep]
+    if df_t.empty:
         raise ValueError(f"No data found for timestep {timestep}")
 
-    # Split success/failure
-    rows_success = rows_t[rows_t["success"] == 1]
-    rows_failure = rows_t[rows_t["success"] == 0]
-    if rows_success.size == 0 or rows_failure.size == 0:
+    # Split groups
+    df_success = df_t[df_t['success'] == 1]
+    df_failure = df_t[df_t['success'] == 0]
+    if df_success.empty or df_failure.empty:
         raise ValueError(f"Missing success or failure stats for timestep {timestep}")
 
-    # Force float conversion when aggregating
-    success_mean = np.array([float(np.mean(rows_success[f"{d}_mean"])) for d in dims], dtype=float)
-    success_std  = np.array([float(np.mean(rows_success[f"{d}_std"]))  for d in dims], dtype=float)
-    failure_mean = np.array([float(np.mean(rows_failure[f"{d}_mean"])) for d in dims], dtype=float)
-    failure_std  = np.array([float(np.mean(rows_failure[f"{d}_std"]))  for d in dims], dtype=float)
+    # Extract in strict order
+    success_mean = df_success[[f"{d}_mean" for d in dims]].mean().to_numpy()
+    success_std  = df_success[[f"{d}_std" for d in dims]].mean().to_numpy()
+
+    failure_mean = df_failure[[f"{d}_mean" for d in dims]].mean().to_numpy()
+    failure_std  = df_failure[[f"{d}_std" for d in dims]].mean().to_numpy()
 
     # Avoid div by zero
     eps = 1e-8
     success_std = np.maximum(success_std, eps)
     failure_std = np.maximum(failure_std, eps)
 
-    # Mahalanobis distances (per dim, diagonal cov)
+    # Mahalanobis distance (per dimension, diagonal cov assumption)
     Ds = np.abs(actions - success_mean) / success_std
     Df = np.abs(actions - failure_mean) / failure_std
 
-    # Masking
+    # Mask: if closer to failure, zero out
     masked_actions = np.where(Ds > Df, 0.0, actions)
 
     return masked_actions
