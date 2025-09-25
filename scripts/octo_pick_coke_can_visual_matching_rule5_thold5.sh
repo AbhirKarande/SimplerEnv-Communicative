@@ -2,7 +2,7 @@
 
 gpu_id=0
 # Instruction refinement (choose 0, 1, or 2). Default disabled.
-INSTR_PROC=${INSTR_PROC:-0}
+INSTR_PROC=${INSTR_PROC:-2}
 
 # Set a logging directory (prefer persistent HPC scratch if available)
 if [ -d "/scratch1/$USER" ] && [ -w "/scratch1/$USER" ]; then
