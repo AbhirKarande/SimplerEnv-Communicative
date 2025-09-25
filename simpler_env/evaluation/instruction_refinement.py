@@ -15,7 +15,7 @@ class InstructionRefiner:
 
     Supported tasks: "pick_coke_can", "close_drawer".
     Procedures:
-      1) Rule: Df < Ds for all orientation dims; trigger after 3 consecutive steps
+      1) Rule: Df < Ds for all positional dims; trigger after 3 consecutive steps
       2) Rule: (Df < Ds for all positional dims) OR (Df < Ds for all orientation dims);
          trigger after 5 consecutive steps
     """
@@ -37,7 +37,7 @@ class InstructionRefiner:
         self.goal_image_path = goal_image_path
 
         self._eps = 1e-8
-        self._consec_needed = 5
+        self._consec_needed = 3
         self._consec_counter = 0
 
         # Preload distributions
@@ -250,7 +250,7 @@ class InstructionRefiner:
         pos_rule = bool(np.all(Df_pos < Ds_pos))
 
         if self.procedure == 1:
-            rule_ok = rot_rule
+            rule_ok = pos_rule
         else:
             rule_ok = pos_rule or rot_rule
 
@@ -263,7 +263,7 @@ class InstructionRefiner:
             # Trigger refinement
             uncertain_dims: List[str] = []
             if self.procedure == 1:
-                uncertain_dims = self.rot_dim_names
+                uncertain_dims = self.pos_dim_names
             else:
                 uncertain_dims = self.rot_dim_names if rot_rule else (self.pos_dim_names if pos_rule else [])
 

@@ -154,7 +154,7 @@ def get_args():
         type=int,
         default=0,
         choices=[0, 1, 2],
-        help="0: disabled; 1: orientation-only rule (3 steps); 2: pos-or-orient rule (5 steps)",
+        help="0: disabled; 1: position-only rule (3 steps); 2: pos-or-orient rule (5 steps)",
     )
     parser.add_argument(
         "--instruction-refine-task",

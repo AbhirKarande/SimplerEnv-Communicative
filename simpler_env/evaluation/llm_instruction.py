@@ -9,8 +9,8 @@ The robot is performing a task called '{task_name}' which is about {task_context
 The initial instruction was: "{initial_instruction}".
 It is currently at timestep {current_timestep}.
 
-We are using Procedure 1: orientation-focused refinement. The model's actions suggest uncertainty specifically in orientation (rotation) dimensions: {action_dim}.
-Provide a refined, orientation-specific command that helps adjust the gripper's orientation to make progress. Keep it short and immediately actionable.
+We are using Procedure 1: position-focused refinement. The model's actions suggest uncertainty specifically in position (x, y, z) dimensions: {action_dim}.
+Provide a refined, position-specific command that helps adjust the gripper/end-effector position to make progress. Keep it short and immediately actionable.
 
 Here is the last frame from the robot's camera:
 
@@ -18,7 +18,7 @@ If available, a goal/overlay image for visual matching is also included below.
 
 Constraints:
 - One concise imperative sentence.
-- Focus on orientation cues (roll/pitch/yaw) relative to visible objects.
+- Focus on positional cues (x/y/z) relative to visible objects.
 - Incorporate the context of the task. (i.e. if the task is to pick up a coke can, the instruction should include something about picking up the coke can)
 - Do not ask questions. Output only the instruction.
 
