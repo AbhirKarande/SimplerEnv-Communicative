@@ -13,9 +13,9 @@ class InstructionRefiner:
     Computes per-timestep distances to success/failure action distributions and
     decides when to trigger instruction refinement via llm_instruction.
 
-    Supported tasks: "pick_coke_can", "close_drawer".
+    Supported tasks: "pick_coke_can", "close_drawer", "move_near".
     Procedures:
-      1) Rule: Df < Ds for all orientation dims; trigger after 3 consecutive steps
+      1) Rule: Df < Ds for all positional dims; trigger after 3 consecutive steps
       2) Rule: (Df < Ds for all positional dims) OR (Df < Ds for all orientation dims);
          trigger after 5 consecutive steps
     """
@@ -37,7 +37,7 @@ class InstructionRefiner:
         self.goal_image_path = goal_image_path
 
         self._eps = 1e-8
-        self._consec_needed = 5
+        self._consec_needed = 3
         self._consec_counter = 0
 
         # Preload distributions
@@ -67,17 +67,24 @@ class InstructionRefiner:
         here = os.path.dirname(__file__)
         if task_kind == "pick_coke_can":
             return os.path.join(here, "pick_coke_can_distribution.csv")
-        else:
+        elif task_kind == "close_drawer":
             return os.path.join(here, "close_drawer_distribution.csv")
+        elif task_kind == "move_near":
+            return os.path.join(here, "move_near_distribution.csv")
+        else:
+            # default to pick coke can to avoid crash
+            return os.path.join(here, "pick_coke_can_distribution.csv")
 
     def _segments(self, task_kind: str) -> Tuple[Tuple[int, int], Tuple[int, int]]:
         """
         Returns ((fail_start, fail_len), (succ_start, succ_len)) for the CSV.
         Row indices refer to data rows (excluding header).
         """
-        if task_kind == "pick_coke_can":
+        if task_kind in ("pick_coke_can", "move_near"):
+            # 0-79 failure, 80-159 success
             return (0, 80), (80, 80)
         else:
+            # close_drawer
             return (0, 113), (113, 113)
 
     def _load_distributions(self, task_kind: str):
@@ -169,47 +176,7 @@ class InstructionRefiner:
 
         return Ds_pos, Ds_rot, Df_pos, Df_rot
 
-    def action_masking(self, raw_action: dict, timestep: int) -> dict:
-        """
-        Freeze per-dimension action deltas where Ds > Df by setting that delta to 0 for
-        the current timestep. Applies independently to world_vector (x,y,z) and
-        rotation_delta (r,p,y).
-        Returns a modified copy of raw_action.
-        """
-        try:
-            action_world_vec = np.asarray(raw_action.get("world_vector", [0.0, 0.0, 0.0]), dtype=np.float64)
-            action_rot_euler = np.asarray(raw_action.get("rotation_delta", [0.0, 0.0, 0.0]), dtype=np.float64)
-        except Exception:
-            return raw_action
-
-        Ds_pos, Ds_rot, Df_pos, Df_rot = self._compute_distances(timestep, action_world_vec, action_rot_euler)
-
-        masked_world = action_world_vec.copy()
-        masked_rot = action_rot_euler.copy()
-        masked_pos_names = []
-        masked_rot_names = []
-
-        # Freeze any dimension where success is farther than failure (Ds > Df)
-        for i in range(3):
-            if Ds_pos[i] > Df_pos[i]:
-                masked_world[i] = 0.0
-                masked_pos_names.append(self.pos_dim_names[i])
-            if Ds_rot[i] > Df_rot[i]:
-                masked_rot[i] = 0.0
-                masked_rot_names.append(self.rot_dim_names[i])
-
-        if masked_pos_names or masked_rot_names:
-            try:
-                pos_str = ",".join(masked_pos_names) if masked_pos_names else "-"
-                rot_str = ",".join(masked_rot_names) if masked_rot_names else "-"
-                print(f"[ActionMask] t={timestep} masked pos:[{pos_str}] rot:[{rot_str}]")
-            except Exception:
-                pass
-
-        new_raw = dict(raw_action)
-        new_raw["world_vector"] = masked_world
-        new_raw["rotation_delta"] = masked_rot
-        return new_raw
+    # Action masking removed per request
 
     def _write_frame(self, image_np: np.ndarray, timestep: int) -> Optional[str]:
         if not TRY_INCLUDE_IMAGE:
@@ -250,7 +217,7 @@ class InstructionRefiner:
         pos_rule = bool(np.all(Df_pos < Ds_pos))
 
         if self.procedure == 1:
-            rule_ok = rot_rule
+            rule_ok = pos_rule
         else:
             rule_ok = pos_rule or rot_rule
 
@@ -263,7 +230,7 @@ class InstructionRefiner:
             # Trigger refinement
             uncertain_dims: List[str] = []
             if self.procedure == 1:
-                uncertain_dims = self.rot_dim_names
+                uncertain_dims = self.pos_dim_names
             else:
                 uncertain_dims = self.rot_dim_names if rot_rule else (self.pos_dim_names if pos_rule else [])
 

@@ -132,12 +132,14 @@ def run_maniskill2_eval_single_episode(
     # Initialize model
     model.reset(task_description)
 
-    # Initialize instruction refiner always (to support masking even with procedure=0)
+    # Initialize instruction refiner (for optional LLM refinement)
     if instruction_refine_task == "auto":
         if "pick" in env_name.lower() or "coke" in env_name.lower():
             task_kind = "pick_coke_can"
         elif "drawer" in env_name.lower():
             task_kind = "close_drawer"
+        elif "move" in env_name.lower() and "near" in env_name.lower():
+            task_kind = "move_near"
         else:
             task_kind = "pick_coke_can"
     else:
@@ -283,9 +285,6 @@ def run_maniskill2_eval_single_episode(
                 raw_action = per_pass_mean_actions[chosen_idx]
                 selected_entropy = per_pass_mean_entropies[chosen_idx]
 
-            # Action masking (freeze per-dim when Ds > Df)
-            raw_action = refiner.action_masking(raw_action, timestep)
-
             # Convert to environment action (mirrors OctoInference.step)
             action = {}
             action["world_vector"] = raw_action["world_vector"] * model.action_scale
@@ -371,9 +370,6 @@ def run_maniskill2_eval_single_episode(
                     # advance the environment to the next subtask
                     predicted_terminated = False
                     env.advance_to_next_subtask()
-
-            # Action masking (freeze per-dim when Ds > Df)
-            raw_action = refiner.action_masking(raw_action, timestep)
 
             # Instruction refinement (non-batched path has same raw_action structure)
             if refiner is not None:
