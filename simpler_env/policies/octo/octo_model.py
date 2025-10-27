@@ -6,7 +6,10 @@ import jax
 import matplotlib.pyplot as plt
 import numpy as np
 from octo.model.octo_model import OctoModel
-import tensorflow as tf
+try:
+    import tensorflow as tf
+except Exception:
+    tf = None
 from transformers import AutoTokenizer
 from transforms3d.euler import euler2axangle
 
@@ -86,13 +89,26 @@ class OctoInference:
         self.num_image_history = 0
 
     def _resize_image(self, image: np.ndarray) -> np.ndarray:
-        image = tf.image.resize(
-            image,
-            size=(self.image_size, self.image_size),
-            method="lanczos3",
-            antialias=True,
-        )
-        image = tf.cast(tf.clip_by_value(tf.round(image), 0, 255), tf.uint8).numpy()
+        if tf is not None:
+            image = tf.image.resize(
+                image,
+                size=(self.image_size, self.image_size),
+                method="lanczos3",
+                antialias=True,
+            )
+            image = tf.cast(tf.clip_by_value(tf.round(image), 0, 255), tf.uint8).numpy()
+        else:
+            try:
+                from PIL import Image
+                pil_img = Image.fromarray(image)
+                pil_img = pil_img.resize((self.image_size, self.image_size), resample=Image.BICUBIC)
+                image = np.array(pil_img, dtype=np.uint8)
+            except Exception:
+                # Fallback: naive nearest-neighbor via slicing
+                h, w = image.shape[:2]
+                ys = (np.linspace(0, h - 1, self.image_size)).astype(np.int32)
+                xs = (np.linspace(0, w - 1, self.image_size)).astype(np.int32)
+                image = image[ys][:, xs]
         return image
 
     def _add_image_to_history(self, image: np.ndarray) -> None:

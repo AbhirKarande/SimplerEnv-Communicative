@@ -1,7 +1,10 @@
 import os
 
 import numpy as np
-import tensorflow as tf
+try:
+    import tensorflow as tf  # optional; used for GPU mem limiting
+except Exception:
+    tf = None
 
 from simpler_env.evaluation.argparse import get_args
 from simpler_env.evaluation.maniskill2_evaluator import maniskill2_evaluator
@@ -21,13 +24,14 @@ if __name__ == "__main__":
     os.environ["DISPLAY"] = ""
     # prevent a single jax process from taking up all the GPU memory
     os.environ["XLA_PYTHON_CLIENT_PREALLOCATE"] = "false"
-    gpus = tf.config.list_physical_devices("GPU")
-    if len(gpus) > 0:
-        # prevent a single tf process from taking up all the GPU memory
-        tf.config.set_logical_device_configuration(
-            gpus[0],
-            [tf.config.LogicalDeviceConfiguration(memory_limit=args.tf_memory_limit)],
-        )
+    if tf is not None:
+        gpus = tf.config.list_physical_devices("GPU")
+        if len(gpus) > 0:
+            # prevent a single tf process from taking up all the GPU memory
+            tf.config.set_logical_device_configuration(
+                gpus[0],
+                [tf.config.LogicalDeviceConfiguration(memory_limit=args.tf_memory_limit)],
+            )
 
     # policy model creation; update this if you are using a new policy model
     if args.policy_model == "rt1":
