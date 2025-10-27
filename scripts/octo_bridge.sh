@@ -39,7 +39,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
-  --additional-env-save-tags octo_init_rng_${init_rng} \
+  --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
@@ -49,7 +49,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
-  --additional-env-save-tags octo_init_rng_${init_rng} \
+  --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
 CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
@@ -59,7 +59,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
-  --additional-env-save-tags octo_init_rng_${init_rng} \
+  --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
 done
@@ -87,7 +87,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
-  --additional-env-save-tags octo_init_rng_${init_rng} \
+  --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
 done
