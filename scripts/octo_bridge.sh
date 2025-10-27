@@ -22,6 +22,13 @@ fi
 LOG_DIR="$LOG_ROOT/simpler_env_results"
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
+# Resolve repo root and ensure imports work regardless of CWD
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+export PYTHONPATH="${REPO_ROOT}:${REPO_ROOT}/ManiSkill2_real2sim:/opt/octo:${PYTHONPATH}"
+export MPLBACKEND=Agg
+cd "${REPO_ROOT}"
+
 scene_name=bridge_table_1_v1
 robot=widowx
 rgb_overlay_path=ManiSkill2_real2sim/data/real_inpainting/bridge_real_eval_1.png
@@ -32,7 +39,7 @@ for init_rng in 0 2 4;
 
 do for policy_model in "${policy_models[@]}";
 
-do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
+do CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
   --control-freq 5 --sim-freq 500 --max-episode-steps 60 \
   --env-name StackGreenCubeOnYellowCubeBakedTexInScene-v0 --scene-name ${scene_name} \
@@ -42,7 +49,7 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
-CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
+CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
   --control-freq 5 --sim-freq 500 --max-episode-steps 60 \
   --env-name PutCarrotOnPlateInScene-v0 --scene-name ${scene_name} \
@@ -52,7 +59,7 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-mod
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
   --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
 
-CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
+CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
   --control-freq 5 --sim-freq 500 --max-episode-steps 60 \
   --env-name PutSpoonOnTableClothInScene-v0 --scene-name ${scene_name} \
@@ -80,7 +87,7 @@ for init_rng in 0 2 4;
 
 do for policy_model in "${policy_models[@]}";
 
-do CUDA_VISIBLE_DEVICES=${gpu_id} python simpler_env/main_inference.py --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
+do CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
   --control-freq 5 --sim-freq 500 --max-episode-steps 120 \
   --env-name PutEggplantInBasketScene-v0 --scene-name ${scene_name} \

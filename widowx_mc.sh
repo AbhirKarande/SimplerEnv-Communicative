@@ -12,4 +12,4 @@
 module purge
 module load apptainer
 
-apptainer exec --bind $PWD,/scratch1/$USER --nv --writable-tmpfs simplerenv-octo.sif /bin/bash -c ". /opt/miniconda/etc/profile.d/conda.sh && conda activate simpler_env && cd /opt/octo && git pull && cd /opt/SimplerEnv-Communicative && git fetch && git pull && git checkout final_experiment &&  cd scripts && chmod +x octo_bridge.sh && cd .. && /opt/SimplerEnv-Communicative/scripts/octo_bridge.sh"
+apptainer exec --bind $PWD,/scratch1/$USER --nv --writable-tmpfs simplerenv-octo.sif /bin/bash -c ". /opt/miniconda/etc/profile.d/conda.sh && conda activate simpler_env && cd /opt/octo && git pull && cd /opt/SimplerEnv-Communicative && git fetch && git pull && git checkout final_experiment && export PYTHONPATH=/opt/SimplerEnv-Communicative:/opt/SimplerEnv-Communicative/ManiSkill2_real2sim:/opt/octo:\$PYTHONPATH && export MPLBACKEND=Agg && cd scripts && chmod +x octo_bridge.sh && cd .. && /opt/SimplerEnv-Communicative/scripts/octo_bridge.sh"
