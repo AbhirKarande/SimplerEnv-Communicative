@@ -7,6 +7,8 @@ from simpler_env.evaluation.argparse import get_args
 from simpler_env.evaluation.maniskill2_evaluator import maniskill2_evaluator
 from simpler_env.policies.octo.octo_server_model import OctoServerInference
 from simpler_env.policies.rt1.rt1_model import RT1Inference
+from simpler_env.policies.openvla.openvla_model import OpenVLAInference
+from simpler_env.policies.spatialvla.spatialvla_model import SpatialVLAInference
 
 try:
     from simpler_env.policies.octo.octo_model import OctoInference, BatchedOctoInference
@@ -66,6 +68,22 @@ if __name__ == "__main__":
                     init_rng=args.octo_init_rng,
                     action_scale=args.action_scale,
                 )
+    elif args.policy_model == "openvla":
+        assert args.ckpt_path is not None
+
+        model = OpenVLAInference(
+            saved_model_path=args.ckpt_path,
+            policy_setup=args.policy_setup,
+            action_scale=args.action_scale,
+        )
+    elif args.policy_model == "spatialvla":
+        assert args.ckpt_path is not None
+
+        model = SpatialVLAInference(
+            saved_model_path=args.ckpt_path,
+            policy_setup=args.policy_setup,
+            action_scale=args.action_scale,
+        )
     else:
         raise NotImplementedError()
 
