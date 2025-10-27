@@ -5,7 +5,8 @@ Evaluate a model on ManiSkill2 environment.
 import os
 
 import numpy as np
-from transforms3d.euler import quat2euler, euler2axangle
+from transforms3d.euler import quat2euler, euler2axangle, euler2quat
+from transforms3d.quaternions import axangle2quat, qmult
 
 from simpler_env.utils.env.env_builder import build_maniskill2_env, get_robot_control_mode
 from simpler_env.utils.env.observation_utils import get_image_from_maniskill2_obs_dict
@@ -125,6 +126,12 @@ def run_maniskill2_eval_single_episode(
     predicted_actions = []
     predicted_terminated, done, truncated = False, False, False
     trajectory = [] if mc_logging else None
+
+    # Track cumulative ("absolute") actions derived from deltas
+    cumulative_env_world = np.zeros(3, dtype=np.float64)
+    cumulative_raw_world = np.zeros(3, dtype=np.float64)
+    cumulative_env_quat = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)  # w, x, y, z
+    cumulative_raw_quat = np.array([1.0, 0.0, 0.0, 0.0], dtype=np.float64)  # w, x, y, z
 
     # Initialize model
     model.reset(task_description)
@@ -290,6 +297,33 @@ def run_maniskill2_eval_single_episode(
             # Store for visualization
             predicted_actions.append(raw_action)
 
+            # Update cumulative (absolute) action trackers
+            try:
+                cumulative_raw_world = cumulative_raw_world + np.asarray(raw_action["world_vector"], dtype=np.float64)
+            except Exception:
+                pass
+            try:
+                # raw delta rotation as quaternion (from Euler)
+                r_raw, p_raw, y_raw = np.asarray(raw_action["rotation_delta"], dtype=np.float64)
+                raw_delta_quat = euler2quat(r_raw, p_raw, y_raw)
+                cumulative_raw_quat = qmult(cumulative_raw_quat, raw_delta_quat)
+            except Exception:
+                pass
+            try:
+                cumulative_env_world = cumulative_env_world + np.asarray(action["world_vector"], dtype=np.float64)
+            except Exception:
+                pass
+            try:
+                # env delta rotation is axis-angle vector scaled already
+                rot_vec = np.asarray(action["rot_axangle"], dtype=np.float64)
+                angle = float(np.linalg.norm(rot_vec))
+                if angle > 1e-12:
+                    axis = rot_vec / angle
+                    env_delta_quat = axangle2quat(axis, angle)
+                    cumulative_env_quat = qmult(cumulative_env_quat, env_delta_quat)
+            except Exception:
+                pass
+
             # MC-style JSON logging per timestep
             if mc_logging:
                 timestep_log = {
@@ -313,6 +347,25 @@ def run_maniskill2_eval_single_episode(
                         # Include each MC forward pass's mean action for analysis
                         "forward_pass_actions": forward_pass_actions,
                     }),
+                    "env_action": _ensure_serializable({
+                        "world_vector": action.get("world_vector", None),
+                        "rot_axangle": action.get("rot_axangle", None),
+                        "gripper": action.get("gripper", None),
+                        "terminate_episode": action.get("terminate_episode", None),
+                        "env_action_vector": np.concatenate([
+                            action.get("world_vector", np.zeros(3)),
+                            action.get("rot_axangle", np.zeros(3)),
+                            action.get("gripper", np.zeros(1)),
+                        ]).tolist() if isinstance(action, dict) else None,
+                    }),
+                    "absolute_raw_action": _ensure_serializable({
+                        "world_position_delta": cumulative_raw_world.copy(),
+                        "rotation_quat_wxyz": cumulative_raw_quat.copy(),
+                    }),
+                    "absolute_env_action": _ensure_serializable({
+                        "world_position_delta": cumulative_env_world.copy(),
+                        "rotation_quat_wxyz": cumulative_env_quat.copy(),
+                    }),
                     "selected_entropy": _ensure_serializable(selected_entropy),
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
                 }
@@ -332,6 +385,31 @@ def run_maniskill2_eval_single_episode(
                     # advance the environment to the next subtask
                     predicted_terminated = False
                     env.advance_to_next_subtask()
+
+            # Update cumulative (absolute) action trackers for non-batched path
+            try:
+                cumulative_raw_world = cumulative_raw_world + np.asarray(raw_action.get("world_vector", np.zeros(3)), dtype=np.float64)
+            except Exception:
+                pass
+            try:
+                r_raw, p_raw, y_raw = np.asarray(raw_action.get("rotation_delta", np.zeros(3)), dtype=np.float64)
+                raw_delta_quat = euler2quat(r_raw, p_raw, y_raw)
+                cumulative_raw_quat = qmult(cumulative_raw_quat, raw_delta_quat)
+            except Exception:
+                pass
+            try:
+                cumulative_env_world = cumulative_env_world + np.asarray(action.get("world_vector", np.zeros(3)), dtype=np.float64)
+            except Exception:
+                pass
+            try:
+                rot_vec = np.asarray(action.get("rot_axangle", np.zeros(3)), dtype=np.float64)
+                angle = float(np.linalg.norm(rot_vec))
+                if angle > 1e-12:
+                    axis = rot_vec / angle
+                    env_delta_quat = axangle2quat(axis, angle)
+                    cumulative_env_quat = qmult(cumulative_env_quat, env_delta_quat)
+            except Exception:
+                pass
 
             # step the environment
             obs, reward, done, truncated, info = env.step(
@@ -387,7 +465,8 @@ def run_maniskill2_eval_single_episode(
     if mc_logging and total_episodes is not None:
         exp_tag = f"exp{getattr(model, '_batched_experimental_setup', 1)}"
         num_mc = getattr(model, "_batched_num_mc_inferences", 10)
-        mc_root_base = f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}"
+        # Place MC outputs under task directory (env_name)
+        mc_root_base = os.path.join(env_name, f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}")
         # add subdirectories to avoid overwriting across URDF variants and overlay presets
         try:
             overlay_tag = os.path.splitext(os.path.basename(rgb_overlay_path))[0] if rgb_overlay_path is not None else "None"
