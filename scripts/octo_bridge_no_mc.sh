@@ -21,6 +21,24 @@ export PYTHONPATH="${REPO_ROOT}:${REPO_ROOT}/ManiSkill2_real2sim:/opt/octo:${PYT
 export MPLBACKEND=Agg
 cd "${REPO_ROOT}"
 
+# Try to activate container conda env if available and isolate from host
+if [ -f "/opt/miniconda/etc/profile.d/conda.sh" ]; then
+    . /opt/miniconda/etc/profile.d/conda.sh
+    conda activate simpler_env || true
+fi
+export PYTHONNOUSERSITE=1
+
+# Ensure JAX/Flax compatibility (KeyArray present); install if missing
+python - <<'PY'
+try:
+    import jax, jaxlib, flax  # noqa: F401
+    from jax.random import KeyArray  # noqa: F401
+except Exception:
+    import sys, subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", "-q",
+                          "jax==0.4.26", "jaxlib==0.4.26", "flax==0.8.1"])    
+PY
+
 for init_rng in 0 2 4;
 
 do for policy_model in "${policy_models[@]}";
