@@ -20,6 +20,7 @@ class OpenVLAInference:
         exec_horizon: int = 1,
         image_size: list[int] = [224, 224],
         action_scale: float = 1.0,
+        dropout: float = 0
     ) -> None:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         if policy_setup == "widowx_bridge":
@@ -41,11 +42,17 @@ class OpenVLAInference:
         )
         self.vla = AutoModelForVision2Seq.from_pretrained(
             saved_model_path,
-            attn_implementation="flash_attention_2",  # [Optional] Requires `flash_attn`
+            # attn_implementation="flash_attention_2",  # [Optional] Requires `flash_attn`
             torch_dtype=torch.bfloat16,
             low_cpu_mem_usage=True,
             trust_remote_code=True,
         ).cuda()
+
+        if dropout > 0:
+            for name, module in self.vla.named_modules():
+                if isinstance(module, torch.nn.Dropout):
+                    print(name)
+                    module.p = dropout
 
         self.image_size = image_size
         self.action_scale = action_scale

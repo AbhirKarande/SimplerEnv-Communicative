@@ -22,6 +22,7 @@ class SpatialVLAInference:
         image_size: list[int] = [224, 224],
         action_scale: float = 1.0,
         action_ensemble_temp: float = -0.8,
+        dropout: float = 0
     ) -> None:
         os.environ["TOKENIZERS_PARALLELISM"] = "false"
         if policy_setup == "widowx_bridge":
@@ -45,15 +46,17 @@ class SpatialVLAInference:
         self.processor = AutoProcessor.from_pretrained(
             saved_model_path, trust_remote_code=True
         )
-        self.vla = (
-            AutoModel.from_pretrained(
+        self.vla = AutoModel.from_pretrained(
                 saved_model_path,
                 torch_dtype=torch.bfloat16,
                 trust_remote_code=True,
-            )
-            .eval()
-            .cuda()
-        )
+            ).cuda()
+
+        if dropout > 0:
+            for name, module in self.vla.named_modules():
+                if isinstance(module, torch.nn.Dropout):
+                    print(name)
+                    module.p = dropout
 
         self.image_size = image_size
         self.action_scale = action_scale
