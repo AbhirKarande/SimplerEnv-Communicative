@@ -563,16 +563,37 @@ def maniskill2_evaluator(model, args):
                                 )
                             )
                 elif args.obj_variation_mode == "episode":
-                    for obj_episode_id in range(args.obj_episode_range[0], args.obj_episode_range[1]):
-                        episode_idx += 1
-                        success_arr.append(
-                            run_maniskill2_eval_single_episode(
+                    if args.min_success_episodes > 0:
+                        success_count = 0
+                        obj_episode_id = args.obj_episode_range[0]
+                        while success_count < args.min_success_episodes:
+                            episode_idx += 1
+                            is_success = run_maniskill2_eval_single_episode(
                                 obj_episode_id=obj_episode_id,
                                 episode_idx=episode_idx,
-                                total_episodes=total_episodes,
+                                total_episodes=f"Target {args.min_success_episodes} successes (current {success_count})",
                                 **kwargs,
                             )
-                        )
+                            success_arr.append(is_success)
+                            if is_success:
+                                success_count += 1
+                            obj_episode_id += 1
+                            
+                            # Safety limit
+                            if obj_episode_id > args.obj_episode_range[0] + 1000:
+                                print(f"Warning: Reached maximum episode limit (1000) without achieving {args.min_success_episodes} successes.")
+                                break
+                    else:
+                        for obj_episode_id in range(args.obj_episode_range[0], args.obj_episode_range[1]):
+                            episode_idx += 1
+                            success_arr.append(
+                                run_maniskill2_eval_single_episode(
+                                    obj_episode_id=obj_episode_id,
+                                    episode_idx=episode_idx,
+                                    total_episodes=total_episodes,
+                                    **kwargs,
+                                )
+                            )
                 else:
                     raise NotImplementedError()
 

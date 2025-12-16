@@ -147,6 +147,12 @@ def get_args():
         action="store_true",
         help="Save per-episode JSON and video in mc_close_drawer_10.py style",
     )
+    parser.add_argument(
+        "--min-success-episodes",
+        type=int,
+        default=0,
+        help="If > 0, keep running episodes until this many successes are collected (only for obj-variation-mode=episode)",
+    )
 
     args = parser.parse_args()
 

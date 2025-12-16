@@ -7,8 +7,8 @@ declare -a policy_models=(
 )
 
 ckpt_path=None
-EXP_SETUP=${EXP_SETUP:-2}
-MC_PASSES=${MC_PASSES:-10}
+EXP_SETUP=${EXP_SETUP:-1}
+MC_PASSES=${MC_PASSES:-40}
 SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 
 # Prefer persistent scratch for logs if available
@@ -65,7 +65,8 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
-  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
+  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR" \
+  --min-success-episodes 30;
 
 CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
@@ -75,7 +76,8 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-mod
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
-  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
+  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR" \
+  --min-success-episodes 30;
 
 CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
@@ -85,7 +87,8 @@ CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-mod
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
-  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
+  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR" \
+  --min-success-episodes 30;
 
 done
 
@@ -113,7 +116,8 @@ do CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 0 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
   --additional-env-save-tags octo_init_rng_${init_rng}_mc${MC_PASSES} \
-  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR";
+  --use-octo-batched --batched-experimental-setup ${EXP_SETUP} --batched-num-mc-inferences ${MC_PASSES} --batched-num-samples-per-inference ${SAMPLES_PER_INFERENCE} --mc-logging --logging-dir "$LOG_DIR" \
+  --min-success-episodes 30;
 
 done
 
