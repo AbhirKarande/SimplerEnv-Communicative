@@ -367,8 +367,19 @@ def run_maniskill2_eval_single_episode(
                         "rotation_quat_wxyz": cumulative_env_quat.copy(),
                     }),
                     "actual_robot_state": _ensure_serializable({
-                        "position": env.tcp.pose.p,
-                        "orientation": quat2euler(env.tcp.pose.q),
+                        # World frame (absolute coordinates)
+                        "position_world": env.tcp.pose.p,
+                        "orientation_world_quat": env.tcp.pose.q,
+                        "orientation_world_euler": quat2euler(env.tcp.pose.q),
+
+                        # Robot base frame (relative to robot mounting position)
+                        "position_robot_base": (env.agent.robot.pose.inv() * env.tcp.pose).p,
+                        "orientation_robot_base_quat": (env.agent.robot.pose.inv() * env.tcp.pose).q,
+                        "orientation_robot_base_euler": quat2euler((env.agent.robot.pose.inv() * env.tcp.pose).q),
+
+                        # Robot base position (for reference/validation)
+                        "robot_base_position": env.agent.robot.pose.p,
+                        "robot_base_orientation_quat": env.agent.robot.pose.q,
                     }),
                     "selected_entropy": _ensure_serializable(selected_entropy),
                     "info": _ensure_serializable(info) if 'info' in locals() else {},
