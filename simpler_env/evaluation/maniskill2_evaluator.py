@@ -481,7 +481,9 @@ def run_maniskill2_eval_single_episode(
         exp_tag = f"exp{getattr(model, '_batched_experimental_setup', 1)}"
         num_mc = getattr(model, "_batched_num_mc_inferences", 10)
         # Place MC outputs under task directory (env_name)
-        mc_root_base = os.path.join(env_name, f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}")
+        # Include additional_env_save_tags (e.g., seed) to avoid overwriting across different runs
+        seed_tag = f"_{additional_env_save_tags}" if additional_env_save_tags else ""
+        mc_root_base = os.path.join(env_name, f"mc_dropout_{env_name}_{total_episodes}_episodes_{num_mc}_forward_passes_{exp_tag}{seed_tag}")
         # add subdirectories to avoid overwriting across URDF variants and overlay presets
         try:
             overlay_tag = os.path.splitext(os.path.basename(rgb_overlay_path))[0] if rgb_overlay_path is not None else "None"
@@ -593,7 +595,12 @@ def maniskill2_evaluator(model, args):
                             if is_success:
                                 success_count += 1
                             obj_episode_id += 1
-                            
+
+                            # Check if we've exhausted the available episode range
+                            if obj_episode_id >= args.obj_episode_range[1]:
+                                print(f"Reached episode range limit ({args.obj_episode_range[1]}) with {success_count}/{args.min_success_episodes} successes.")
+                                break
+
                             # Safety limit
                             if obj_episode_id > args.obj_episode_range[0] + 1000:
                                 print(f"Warning: Reached maximum episode limit (1000) without achieving {args.min_success_episodes} successes.")
