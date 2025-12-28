@@ -67,7 +67,7 @@ do for policy_model in "${policy_models[@]}";
 do CUDA_VISIBLE_DEVICES=${gpu_id} python -m simpler_env.main_inference --policy-model ${policy_model} --ckpt-path ${ckpt_path} \
   --robot ${robot} --policy-setup widowx_bridge --octo-init-rng ${init_rng} \
   --control-freq 5 --sim-freq 500 --max-episode-steps 60 \
-  --env-name PutSpoonOnPlateInScene-v0 --scene-name ${scene_name} \
+  --env-name PutSpoonOnTableClothInScene-v0 --scene-name ${scene_name} \
   --rgb-overlay-path ${rgb_overlay_path} \
   --robot-init-x ${robot_init_x} ${robot_init_x} 1 --robot-init-y ${robot_init_y} ${robot_init_y} 1 --obj-variation-mode episode --obj-episode-range 28 50 \
   --robot-init-rot-quat-center 0 0 0 1 --robot-init-rot-rpy-range 0 0 1 0 0 1 0 0 1 \
