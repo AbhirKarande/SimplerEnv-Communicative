@@ -596,13 +596,12 @@ def maniskill2_evaluator(model, args):
                                 success_count += 1
                             obj_episode_id += 1
 
-                            # Check if we've exhausted the available episode range
+                            # Wrap around to the beginning if we exhaust the episode range
                             if obj_episode_id >= args.obj_episode_range[1]:
-                                print(f"Reached episode range limit ({args.obj_episode_range[1]}) with {success_count}/{args.min_success_episodes} successes.")
-                                break
+                                obj_episode_id = args.obj_episode_range[0]
 
-                            # Safety limit
-                            if obj_episode_id > args.obj_episode_range[0] + 1000:
+                            # Safety limit to prevent infinite loops
+                            if episode_idx > 1000:
                                 print(f"Warning: Reached maximum episode limit (1000) without achieving {args.min_success_episodes} successes.")
                                 break
                     else:
