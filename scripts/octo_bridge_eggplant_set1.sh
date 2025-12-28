@@ -7,7 +7,7 @@ declare -a policy_models=(
 
 ckpt_path=None
 EXP_SETUP=${EXP_SETUP:-1}
-MC_PASSES=${MC_PASSES:-40}
+MC_PASSES=${MC_PASSES:-10}
 SAMPLES_PER_INFERENCE=${SAMPLES_PER_INFERENCE:-30}
 
 # Use NEW directory to avoid mixing with old data
@@ -18,7 +18,7 @@ LOG_ROOT="${SCRATCH}"
 else
 LOG_ROOT=${LOG_ROOT:-${TMPDIR:-/tmp}}
 fi
-LOG_DIR="$LOG_ROOT/simpler_env_mc_data_dec27"  # NEW DIRECTORY
+LOG_DIR="$LOG_ROOT/simpler_env_mc_data_dec28"  # NEW DIRECTORY for 10 MC passes
 mkdir -p "$LOG_DIR" 2>/dev/null || true
 
 # Resolve repo root and ensure imports work regardless of CWD
